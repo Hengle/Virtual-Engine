@@ -1,0 +1,36 @@
+Texture2D<float4> _MainTex[6] : register(t0, space0);
+Texture2D<float> _GreyTex[6] : register(t0, space1);
+Texture2D<uint> _IntegerTex[6] : register(t0, space2);
+TextureCube<float4> _Cubemap[6] : register(t0, space3);
+cbuffer Per_Object_Buffer : register(b0)
+cbuffer Per_Camera_Buffer : register(b1)
+cbuffer LightCullCBuffer : register(b2)
+cbuffer TextureIndices : register(b3)
+cbuffer ProjectionShadowParams : register(b4)
+StructuredBuffer<LightCommand> _AllLight : register(t0, space4);
+StructuredBuffer<uint> _LightIndexBuffer : register(t1, space4);
+StructuredBuffer<StandardPBRMaterial> _DefaultMaterials : register(t2, space4);
+#pragma Geometry
+vertex VS
+fragment PS
+cull back
+ztest gequal
+zwrite off
+blend off
+#end
+#pragma depth
+vertex VS_Depth
+fragment PS_Depth
+cull back
+ztest greater
+zwrite on
+blend off
+#end
+#pragma shadowmap
+vertex VS_Shadowmap
+fragment PS_Shadowmap
+cull front
+ztest greater
+zwrite on
+blend off
+#end

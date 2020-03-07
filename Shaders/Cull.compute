@@ -1,0 +1,197 @@
+#include "Include/Sampler.cginc"
+cbuffer CullBuffer : register(b0)
+{
+    float4x4 _LastVPMatrix;
+    float4x4 _VPMatrix;
+    float4 planes[6];
+    //Align
+    float3 _FrustumMinPoint;
+    uint _Count;
+    //Align
+    float3 _FrustumMaxPoint;
+};
+struct MultiDrawCommand
+{
+    uint value[16]; //same size as CPU
+};
+struct ObjectData
+{
+    float4x4 localToWorld;
+    float3 boundingCenter;
+    float3 boundingExtent;
+};
+StructuredBuffer<MultiDrawCommand> _InputBuffer : register(t0);
+StructuredBuffer<ObjectData> _InputDataBuffer : register(t1);
+Texture2D<float> _HizDepthTex : register(t2);
+RWStructuredBuffer<MultiDrawCommand> _OutputBuffer : register(u0);
+RWStructuredBuffer<uint> _CountBuffer : register(u1);
+RWStructuredBuffer<uint> _InputIndexBuffer : register(u2);
+RWStructuredBuffer<uint> _DispatchIndirectBuffer : register(u3);
+static const float2 _Resolution = float2(1024, 512);
+static const float maxHIZMip = 8;
+
+
+float PlaneTest(float3 localPosition, float3 extent, float4x4 localToWorld){
+    float3 position = mul(localToWorld, float4(localPosition, 1)).xyz;
+    float3 worldMin = position;
+    float3 worldMax = position;
+    uint i;
+    
+    const float3 offsetRate[8] = {
+        float3(1, 1, 1),
+        float3(1, 1, -1),
+        float3(1, -1, 1),
+        float3(1, -1, -1),
+        float3(-1, 1, 1),
+        float3(-1, 1, -1),
+        float3(-1, -1, 1),
+        float3(-1, -1, -1)
+    };
+   
+    [loop]
+    for(i = 0; i < 8; ++i)
+    {
+        float3 currPos = mul(localToWorld, float4(localPosition + extent * offsetRate[i], 1)).xyz;
+        worldMin = min(worldMin, currPos);
+        worldMax = max(worldMax, currPos);
+    }
+    float outOfRange = dot(_FrustumMinPoint.xyz > worldMax, 1) + dot(_FrustumMaxPoint.xyz < worldMin, 1);
+    if(outOfRange > 0.5) return 0;
+    [loop]
+    for(i = 0; i < 6; ++i)
+    {
+        float4 plane = planes[i];
+        float3 absNormal = abs(mul(plane.xyz, (float3x3)localToWorld));
+        if((dot(position, plane.xyz) - dot(absNormal, extent)) > -plane.w)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+float OcclusionTest(ObjectData info, float4x4 vpMat, float2 hizDepthSize, float maxMipLevel)
+{
+    const float3 aggressiveExtentArray[8] =
+    {
+    float3(1, 1, 1),
+    float3(1, 1, -1),
+    float3(1, -1, 1),
+    float3(1, -1, -1),
+    float3(-1, 1, 1),
+    float3(-1, 1, -1),
+    float3(-1, -1, 1),
+    float3(-1, -1, -1)
+    };
+    float minZ = 0;
+    float2 maxXY = 0; float2 minXY = 1;
+    [loop]
+    for(uint i = 0; i < 8; ++i)
+    {
+       float3 boxCorner = mul(info.localToWorld, float4(info.boundingCenter + info.boundingExtent * aggressiveExtentArray[i], 1)).xyz; 
+       float4 clipPos = mul(vpMat, float4(boxCorner, 1));
+       clipPos /= clipPos.w;
+       minXY = min(clipPos.xy, minXY);
+       maxXY = max(clipPos.xy, maxXY);
+       minZ = max(minZ, clipPos.z);
+    }
+    float4 boxUVs = float4(minXY, maxXY);
+    boxUVs = saturate(boxUVs * 0.5 + 0.5);
+    float2 size = (boxUVs.zw - boxUVs.xy) * hizDepthSize;
+    float mip = (log2(max(size.x, size.y)));
+    if(mip > maxMipLevel + 0.5)
+    {
+        return 1;
+    }
+    mip = ceil(mip);
+    mip = min(mip, maxMipLevel);
+     float  level_lower = max(mip - 1, 0);
+        float2 scale = exp2(-level_lower) *hizDepthSize;
+        float2 a = floor(boxUVs.xy*scale);
+        float2 b = ceil(boxUVs.zw*scale);
+        float2 dims = b - a;
+ 
+        // Use the lower level if we only touch <= 2 texels in both dimensions
+        if (dims.x <= 2 && dims.y <= 2)
+            mip = level_lower;
+
+    float4 depth = float4(_HizDepthTex.SampleLevel(pointClampSampler, boxUVs.xy, mip),
+                         _HizDepthTex.SampleLevel(pointClampSampler, boxUVs.zy, mip),
+                         _HizDepthTex.SampleLevel(pointClampSampler, boxUVs.xw, mip),
+                         _HizDepthTex.SampleLevel(pointClampSampler, boxUVs.zw, mip)
+    );
+    depth.xy = min(depth.xy, depth.zw);
+    depth.x = min(depth.x, depth.y);
+    return minZ >= depth.x;
+}
+
+[numthreads(64, 1, 1)]
+void CSMain(uint id : SV_DISPATCHTHREADID)
+{
+    if(id >= _Count) return;
+    uint count;
+    ObjectData data = _InputDataBuffer[id];
+    if(PlaneTest(data.boundingCenter, data.boundingExtent, data.localToWorld) > 0.5)
+    {
+        InterlockedAdd(_CountBuffer[0], 1, count);
+        _OutputBuffer[count] = _InputBuffer[id];
+    }
+}
+
+[numthreads(1,1,1)]
+void Clear()
+{
+    _CountBuffer[0] = 0;
+}
+
+[numthreads(64, 1, 1)]
+void OccFirstCheck(uint id : SV_DISPATCHTHREADID)
+{
+    if(id >= _Count) return;
+    uint count;
+    ObjectData data = _InputDataBuffer[id];
+    if(PlaneTest(data.boundingCenter, data.boundingExtent, data.localToWorld) > 0.5)
+    {
+        if(OcclusionTest(data, _LastVPMatrix, _Resolution, maxHIZMip) > 0.5)
+        {
+            InterlockedAdd(_CountBuffer[0], 1, count);
+            _OutputBuffer[count] = _InputBuffer[id];
+           
+        }
+        else
+        {
+            InterlockedAdd(_DispatchIndirectBuffer[3], 1, count);
+            _InputIndexBuffer[count] = id;
+        }
+    }
+}
+
+[numthreads(1, 1, 1)]
+void ClearOcc()
+{
+    _CountBuffer[0] = 0;
+    _DispatchIndirectBuffer[3] = 0;
+}
+
+[numthreads(1, 1, 1)]
+void PrepareIndirectDispatch()
+{
+    _DispatchIndirectBuffer[0] = (uint)((_DispatchIndirectBuffer[3] + 63) / 64);
+    _DispatchIndirectBuffer[1] = 1;
+    _DispatchIndirectBuffer[2] = 1;
+    _CountBuffer[0] = 0;
+}
+
+[numthreads(64, 1, 1)]
+void OccReCheck(uint id : SV_DISPATCHTHREADID)
+{
+    if(id >= _DispatchIndirectBuffer[3]) return;
+    uint count;
+    uint bufferID = _InputIndexBuffer[id];
+    ObjectData data = _InputDataBuffer[bufferID];
+    if(OcclusionTest(data, _VPMatrix, _Resolution, maxHIZMip) > 0.5)
+    {
+        InterlockedAdd(_CountBuffer[0], 1, count);
+        _OutputBuffer[count] = _InputBuffer[bufferID];
+    }
+}

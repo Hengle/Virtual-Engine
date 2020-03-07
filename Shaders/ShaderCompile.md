@@ -1,0 +1,12 @@
+shader Skybox.hlsl Skybox.prop
+shader Default.hlsl Default.prop
+compute ScreenSpaceReflection.compute SSR.shaderProp
+shader TemporalAA.hlsl TemporalAA.prop
+compute Froxel.compute Froxel.prop
+shader PostProcess.hlsl PostProcess.prop
+shader MotionBlur.hlsl MotionBlur.prop
+compute Cull.compute Cull.prop
+compute ExposureHistorgram.compute ExposureHistorgram.prop
+shader Bloom.hlsl Bloom.prop
+compute LightCull.compute LightCull.prop
+shader PreintBaker.hlsl PreintBaker.prop

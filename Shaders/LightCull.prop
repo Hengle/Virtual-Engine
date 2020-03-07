@@ -1,0 +1,9 @@
+cbuffer LightCullCBuffer : register(b0)
+RWTexture2D<float4> _MainTex[2] : register(u0, space0);
+RWStructuredBuffer<uint> _LightIndexBuffer : register(u0, space1);
+RWStructuredBuffer<uint> _ReflectionIndexBuffer : register(u1, space1);
+StructuredBuffer<LightCommand> _AllLight : register(t0);
+StructuredBuffer<ReflectionProbe> _AllReflectionProbe : register(t1);
+#pragma SetXYPlane
+#pragma SetZPlane
+#pragma CBDR

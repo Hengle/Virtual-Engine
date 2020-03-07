@@ -1,0 +1,9 @@
+TextureCube _MainTex : register(t0, space0);
+cbuffer SkyboxBuffer : register(b0)
+#pragma geo
+vertex vert
+fragment frag
+ztest gequal
+zwrite off
+cull back
+#end

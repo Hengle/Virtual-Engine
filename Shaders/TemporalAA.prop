@@ -1,0 +1,27 @@
+cbuffer TAAConstBuffer : register(b0)
+cbuffer FroxelParams : register(b1)
+cbuffer Per_Camera_Buffer : register(b2)
+Texture2D<float4> _MainTex : register(t0);
+Texture2D<float> _DepthTex : register(t1);
+Texture2D<float2> _MotionVectorTex : register(t2);
+Texture2D<float> _LastDepthTex : register(t3);
+Texture2D<float2> _LastMotionVectorTex : register(t4);
+Texture2D<float4> _HistoryTex : register(t5);
+Texture3D<float4> _VolumeTex : register(t6);
+
+#pragma taa
+vertex vert
+fragment frag
+zwrite off
+ztest always
+cull off
+#end
+
+#pragma froxel
+vertex vert
+fragment frag_volume
+zwrite off
+ztest always
+cull off
+blend on
+#end

@@ -1,0 +1,8 @@
+.vs/
+x64/
+Resource/
+Textures/
+Debug/
+*.7z
+*.zip
+*.rar

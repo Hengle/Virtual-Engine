@@ -1,0 +1,48 @@
+Texture2D<float4> _MainTex : register(t0, space0);
+Texture2D<float> _CameraDepthTexture : register(t1, space0);
+Texture2D<float2> _CameraMotionVectorsTexture : register(t2, space0);
+Texture2D<float4> _NeighborMaxTex : register(t3, space0);
+Texture2D<float4> _VelocityTex : register(t4, space0);
+cbuffer Params : register(b0)
+#pragma fragVelo
+vertex vert
+fragment FragVelocitySetup
+zwrite off
+ztest always
+cull off
+#end
+#pragma fragT1
+vertex vert
+fragment FragTileMax1
+zwrite off
+ztest always
+cull off
+#end
+#pragma fragT2
+vertex vert
+fragment FragTileMax2
+zwrite off
+ztest always
+cull off
+#end
+#pragma fragMv
+vertex vert
+fragment FragTileMaxV
+zwrite off
+ztest always
+cull off
+#end
+#pragma fragNeighbor
+vertex vert
+fragment FragNeighborMax
+zwrite off
+ztest always
+cull off
+#end
+#pragma fragRecon
+vertex vert
+fragment FragReconstruction
+zwrite off
+ztest always
+cull off
+#end

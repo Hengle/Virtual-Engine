@@ -1,0 +1,28 @@
+#include "Include/Sampler.cginc"
+RWTexture2D<float> _DepthTexture[7] : register(u0, space0);
+#define GENERATE_MIP(mipLevel, avaliableElement, stillEnabled, id, groupID, dispatchID) \
+[branch]\
+if(stillEnabled){\
+dispatchID = id * avaliableElement + groupID;\
+_DepthTexture[mipLevel + 1][dispatchID] =( \
+_DepthTexture[mipLevel][dispatchID * 2] + _DepthTexture[mipLevel][dispatchID * 2 + uint2(0, 1)] +\
+_DepthTexture[mipLevel][dispatchID * 2 + uint2(1, 0)] + _DepthTexture[mipLevel][dispatchID * 2 + uint2(1, 1)]) * 0.25;\
+mipLevel++;\
+avaliableElement /= 2;\
+if(groupID.x >= avaliableElement.x || groupID.y >= avaliableElement.y) stillEnabled = false;}\
+AllMemoryBarrierWithGroupSync();
+
+[numthreads(32,32,1)]
+void GenerateMip(uint2 id : SV_GROUPID, uint2 groupID : SV_GROUPTHREADID)
+{
+    uint mipLevel = 0;
+    uint2 dispatchID = 0;
+    uint2 avaliable = 32;
+    bool stillEnabled = true;
+    GENERATE_MIP(mipLevel, avaliable, stillEnabled, id, groupID, dispatchID)      //Mip : 1, Ava : 16
+    GENERATE_MIP(mipLevel, avaliable, stillEnabled, id, groupID, dispatchID)      //Mip : 2, Ava : 8
+    GENERATE_MIP(mipLevel, avaliable, stillEnabled, id, groupID, dispatchID)      //Mip : 3, Ava : 4
+    GENERATE_MIP(mipLevel, avaliable, stillEnabled, id, groupID, dispatchID)      //Mip : 4, Ava : 2
+    GENERATE_MIP(mipLevel, avaliable, stillEnabled, id, groupID, dispatchID)      //Mip : 5, Ava : 1
+    GENERATE_MIP(mipLevel, avaliable, stillEnabled, id, groupID, dispatchID)      //Mip : 6, Ava : 0
+}

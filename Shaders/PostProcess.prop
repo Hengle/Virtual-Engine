@@ -1,0 +1,13 @@
+Texture2D<float4> _MainTex : register(t0, space0);
+Texture3D<float4> _Lut3D : register(t1, space0);
+Texture2D<float> _ExposureTex : register(t2, space0);
+Texture2D _BloomTex : register(t3, space0);
+Texture2D _Bloom_DirtTex : register(t4, space0);
+cbuffer Params : register(b0)
+#pragma post
+vertex vert
+fragment frag
+ztest off
+zwrite always
+cull off
+#end

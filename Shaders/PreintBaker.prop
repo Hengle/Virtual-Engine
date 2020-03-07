@@ -1,0 +1,7 @@
+#pragma pass
+vertex vert
+fragment frag
+ztest always
+zwrite off
+cull off
+#end

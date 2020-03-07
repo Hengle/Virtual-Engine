@@ -1,0 +1,5 @@
+RWStructuredBuffer<uint> _HistogramBuffer : register(u0);
+Texture2D<float4> _Source : register(t0);
+cbuffer Params : register(b0)
+#pragma KEyeHistogram
+#pragma KEyeHistogramClear

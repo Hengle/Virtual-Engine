@@ -1,0 +1,67 @@
+Texture2D _MainTex : register(t0, space0);
+Texture2D _BloomTex : register(t1, space0);
+Texture2D _AutoExposureTex : register(t2, space0);
+cbuffer Params : register(b0)
+#pragma pass
+vertex vert
+fragment FragPrefilter13
+ztest always
+cull off
+zwrite off
+#end
+#pragma pass
+vertex vert
+fragment FragPrefilter4
+ztest always
+cull off
+zwrite off
+#end
+#pragma pass
+vertex vert
+fragment FragDownsample13
+ztest always
+cull off
+zwrite off
+#end
+#pragma pass
+vertex vert
+fragment FragDownsample4
+ztest always
+cull off
+zwrite off
+#end
+#pragma pass
+vertex vert
+fragment FragUpsampleTent
+ztest always
+cull off
+zwrite off
+#end
+#pragma pass
+vertex vert
+fragment FragUpsampleBox
+ztest always
+cull off
+zwrite off
+#end
+#pragma pass
+vertex vert
+fragment FragDebugOverlayThreshold
+ztest always
+cull off
+zwrite off
+#end
+#pragma pass
+vertex vert
+fragment FragDebugOverlayTent
+ztest always
+cull off
+zwrite off
+#end
+#pragma pass
+vertex vert
+fragment FragDebugOverlayBox
+ztest always
+cull off
+zwrite off
+#end

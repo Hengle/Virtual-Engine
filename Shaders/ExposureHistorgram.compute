@@ -1,0 +1,66 @@
+// Put the following line to 0 or comment it to disable vignette weighting
+#include "Include/Sampler.cginc"
+#include "Include/D3D12.hlsl"
+#include "Include/StdLib.cginc"
+#include "Include/ACES.hlsl"
+#include "Include/Colors.hlsl"
+#include "Include/ExposureHistogram.hlsl"
+RWStructuredBuffer<uint> _HistogramBuffer : register(u0);
+Texture2D<float4> _Source : register(t0);
+cbuffer Params : register(b0)
+{
+    float4 _Params1; // x: lowPercent, y: highPercent, z: minBrightness, w: maxBrightness
+    float4 _Params2; // x: speed down, y: speed up, z: exposure compensation, w: delta time
+    float4 _ScaleOffsetRes; // x: scale, y: offset, w: histogram pass width, h: histogram pass height
+    uint isFixed;
+};
+
+groupshared uint gs_histogram[HISTOGRAM_BINS];
+
+[numthreads(HISTOGRAM_THREAD_X, HISTOGRAM_THREAD_Y, 1)]
+void KEyeHistogram(uint2 dispatchThreadId : SV_DispatchThreadID, uint2 groupThreadId : SV_GroupThreadID)
+{
+    // Pretty straightforward implementation of histogram gathering using atomic ops.
+    // I tried a few methods (no atomic ops / heavy LDS leveraging) but this one turned out to be
+    // the fastest on desktop (Nvidia - Kepler/Maxwell) and PS4. Still need to try it on GCN/desktop
+    // but considering it runs very fast on PS4 we can expect it to run well (?).
+
+    const uint localThreadId = groupThreadId.y * HISTOGRAM_THREAD_X + groupThreadId.x;
+
+    // Clears the shared memory
+    if (localThreadId < HISTOGRAM_BINS)
+        gs_histogram[localThreadId] = 0u;
+
+    float2 ipos = float2(dispatchThreadId) * 2.0;
+
+    GroupMemoryBarrierWithGroupSync();
+
+    // Gather local group histogram
+    if (ipos.x < _ScaleOffsetRes.z && ipos.y < _ScaleOffsetRes.w)
+    {
+        uint weight = 1u;
+        float2 sspos = ipos / _ScaleOffsetRes.zw;
+        float2 d = abs(sspos - (0.5).xx);
+        float vfactor = saturate(1.0 - dot(d, d));
+        vfactor *= vfactor;
+        weight = (uint)(64.0 * vfactor);
+        float3 color = _Source.SampleLevel(bilinearClampSampler, sspos, 0.0).xyz; // Bilinear downsample 2x
+        float luminance = Luminance(color);
+        float logLuminance = GetHistogramBinFromLuminance(luminance, _ScaleOffsetRes.xy);
+        uint idx = (uint)(logLuminance * (HISTOGRAM_BINS - 1u));
+        InterlockedAdd(gs_histogram[idx], weight);
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    // Merge everything
+    if (localThreadId < HISTOGRAM_BINS)
+        InterlockedAdd(_HistogramBuffer[localThreadId], gs_histogram[localThreadId]);
+}
+
+[numthreads(16, 1, 1)]
+void KEyeHistogramClear(uint dispatchThreadId : SV_DispatchThreadID)
+{
+    if (dispatchThreadId < HISTOGRAM_BINS)
+        _HistogramBuffer[dispatchThreadId] = 0u;
+}

@@ -1,0 +1,11 @@
+cbuffer Per_Camera_Buffer : register(b0)
+cbuffer LightCullCBuffer : register(b1)
+cbuffer FroxelParams : register(b2)
+Texture2D<float> _GreyTex[6] : register(t0, space0);
+RWTexture3D<float4> _VolumeTex : register(u0, space0);
+Texture3D<float4> _LastVolume : register(t0, space1);
+RWTexture3D<float4> _RWLastVolume : register(u1, space0);
+#pragma CSMain
+#pragma Scatter
+#pragma Clear
+#pragma Copy

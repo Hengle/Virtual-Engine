@@ -1,0 +1,5 @@
+RWTexture2D _DepthTexture[9] : register(u0)
+Texture2D _CameraDepthTexture : register(t0)
+#pragma GenerateMip
+#pragma GenerateMip1
+#pragma UpdateDepth
