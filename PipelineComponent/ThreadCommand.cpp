@@ -2,6 +2,7 @@
 #include "../RenderComponent/RenderTexture.h"
 #include "../RenderComponent/StructuredBuffer.h"
 #include "../Singleton/Graphics.h"
+#include "../Common/d3dApp.h"
 void ThreadCommand::ResetCommand()
 {
 	ThrowIfFailed(cmdAllocator->Reset());
@@ -9,6 +10,7 @@ void ThreadCommand::ResetCommand()
 }
 void ThreadCommand::CloseCommand()
 {
+
 	for (auto ite = rtStateMap.begin(); ite != rtStateMap.end(); ++ite)
 	{
 		if (ite->second)
@@ -29,6 +31,7 @@ void ThreadCommand::CloseCommand()
 	buffer.ExecuteCommand(GetCmdList());
 	rtStateMap.clear();
 	sbufferStateMap.clear();
+
 	cmdList->Close();
 }
 ThreadCommand::ThreadCommand(ID3D12Device* device, D3D12_COMMAND_LIST_TYPE type)

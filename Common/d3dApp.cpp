@@ -51,7 +51,7 @@ int D3DApp::Run()
 	mTimer.Reset();
 	while (msg.message != WM_QUIT)
 	{
-		
+
 		// If there are Window messages then process them.
 		if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
 		{
@@ -65,7 +65,12 @@ int D3DApp::Run()
 			if (!mAppPaused)
 			{
 				CalculateFrameStats();
-				if (!Draw(mTimer)) return -1;
+				if (!Draw(mTimer))
+				{
+					if (mSwapChain)
+						mSwapChain->SetFullscreenState(false, nullptr);
+					return -1;
+				}
 			}
 			else
 			{
@@ -439,8 +444,6 @@ void D3DApp::FlushCommandQueue()
 	// are on the GPU timeline, the new fence point won't be set until the GPU finishes
 	// processing all the commands prior to this Signal().
 	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
-
-	// Wait until the GPU has completed commands up to this fence point.
 	if (mFence->GetCompletedValue() < mCurrentFence)
 	{
 		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
@@ -452,6 +455,8 @@ void D3DApp::FlushCommandQueue()
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
 	}
+	// Wait until the GPU has completed commands up to this fence point.
+
 }
 
 ID3D12Resource* D3DApp::CurrentBackBuffer()const

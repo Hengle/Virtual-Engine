@@ -2,6 +2,7 @@
 
 #include "../Common/d3dUtil.h"
 #include "../Common/MObject.h"
+#include "../Common/d3dApp.h"
 class FrameResource;
 class UploadBuffer : public MObject
 {

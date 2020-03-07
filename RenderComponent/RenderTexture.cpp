@@ -432,7 +432,7 @@ size_t RenderTexture::GetSizeFromProperty(
 			else if (usage == RenderTextureUsage::DepthBuffer)
 				writeState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 			else writeState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			readState = (bool)usage ? D3D12_RESOURCE_STATE_DEPTH_READ : (D3D12_RESOURCE_STATES)(0x40 | 0x80 | 0x800);
+			readState = (bool)usage ? D3D12_RESOURCE_STATE_DEPTH_READ : D3D12_RESOURCE_STATE_GENERIC_READ;
 		}
 
 		void RenderTexture::BindRTVToHeap(DescriptorHeap * targetHeap, UINT index, ID3D12Device * device, UINT slice)

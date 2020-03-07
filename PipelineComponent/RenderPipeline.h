@@ -48,7 +48,7 @@ private:
 	void Init()
 	{
 		T* ptr = new T();
-		components.emplace_back(ptr);
+		components.push_back(ptr);
 		componentsLink.insert_or_assign(typeid(T).name(), ptr);
 	}
 	RenderPipeline(ID3D12Device* device, ID3D12GraphicsCommandList* commandList);

@@ -260,7 +260,7 @@ RenderPipeline::~RenderPipeline()
 		components[i]->Dispose();
 		delete components[i];
 	}
-
+	componentsLink.clear();
 }
 
 RenderPipeline* RenderPipeline::GetInstance(ID3D12Device* device, ID3D12GraphicsCommandList* commandList)

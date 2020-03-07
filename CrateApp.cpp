@@ -73,23 +73,23 @@ public:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	PSTR cmdLine, int showCmd)
 {
+	StackObject<CrateApp> theApp;
 	// Enable run-time memory check for debug builds.
 #if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	try
 	{
-		std::unique_ptr<CrateApp> theApp = nullptr;
-	RE_START:
-		theApp = std::unique_ptr<CrateApp>(new CrateApp(hInstance));
+		
+		theApp.New(hInstance);
 		if (!theApp->Initialize())
 			return 0;
 
 		int value = theApp->Run();
 		if (value == -1)
 		{
-			theApp = nullptr;
-			goto RE_START;
+			return 0;
 		}
+		theApp.Delete();
 	}
 	catch (DxException & e)
 	{
@@ -97,21 +97,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 		return 0;
 	}
 #else
-	std::unique_ptr<CrateApp> theApp = nullptr;
-RE_START:
-	theApp = std::unique_ptr<CrateApp>(new CrateApp(hInstance));
+	
+	theApp.New(hInstance);
 	if (!theApp->Initialize())
 		return 0;
 
 	int value = theApp->Run();
 	if (value == -1)
 	{
-		theApp = nullptr;
-		goto RE_START;
+		return 0;
 	}
 #endif
-
-	
+	theApp.Delete();
 }
 
 void CrateApp::OnPressMinimizeKey(bool minimize)
@@ -164,9 +161,10 @@ void CrateApp::DisposeRenderer()
 
 CrateApp::~CrateApp()
 {
-
+	mSwapChain->SetFullscreenState(false, nullptr);
 	pipelineJobSys->Wait();
 	camMove.Delete();
+	
 	if (md3dDevice != nullptr)
 		FlushCommandQueue();
 	DisposeRenderer();
@@ -260,21 +258,23 @@ bool CrateApp::Draw(const GameTimer& gt)
 	data.deltaTime = gt.DeltaTime();
 	data.time = gt.TotalTime();
 	rp->PrepareRendering(data, pipelineJobSys.GetPtr(), bucketArray);
-	pipelineJobSys->Wait();
+	pipelineJobSys->Wait();//Last Frame's Logic Stop Here
+	HRESULT crashResult = md3dDevice->GetDeviceRemovedReason();
+	if (crashResult != S_OK)
+	{
+		return false;
+	}
 	Input::UpdateFrame(int2(-1, -1));//Update Input Buffer
 //	SetCursorPos(mClientWidth / 2, mClientHeight / 2);
-	
-	
 	data.resource->UpdateBeforeFrame(data.fence);//Flush CommandQueue
 	pipelineJobSys->ExecuteBucket(bucketArray.data(), bucketArray.size());					//Execute Tasks
 
 	rp->ExecuteRendering(data);
 	HRESULT presentResult = mSwapChain->Present(0, 0);
-	HRESULT crashResult = md3dDevice->GetDeviceRemovedReason();
 #if defined(DEBUG) | defined(_DEBUG)
-	ThrowHResult(presentResult, mSwapChain->Present(0, 0))
+	ThrowHResult(presentResult, PresentFunction);
 #endif
-	if (crashResult != S_OK || presentResult != S_OK)
+	if (presentResult != S_OK)
 	{
 		return false;
 	}

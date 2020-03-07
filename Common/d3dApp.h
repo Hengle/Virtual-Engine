@@ -25,8 +25,8 @@ protected:
     D3DApp(const D3DApp& rhs) = delete;
     D3DApp& operator=(const D3DApp& rhs) = delete;
     virtual ~D3DApp();
-
 public:
+
 	static constexpr DXGI_FORMAT BACK_BUFFER_FORMAT()
 	{
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -69,6 +69,7 @@ protected:
 protected:
 
     static D3DApp* mApp;
+	
 
     HINSTANCE mhAppInst = nullptr; // application instance handle
 	bool      mAppPaused = false;  // is the application paused?
