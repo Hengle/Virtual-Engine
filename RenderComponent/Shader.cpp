@@ -6,7 +6,6 @@
 #include <fstream>
 #include "../JobSystem/JobInclude.h"
 #include "ShaderIO.h"
-using namespace std;
 using Microsoft::WRL::ComPtr;
 Shader::~Shader()
 {
@@ -72,7 +71,7 @@ struct ShaderCompile
 
 Shader::Shader(ID3D12Device* device, const std::string& csoFilePath)
 {
-	DecodeShader(csoFilePath, mVariablesVector, allPasses);
+	ShaderIO::DecodeShader(csoFilePath, mVariablesVector, allPasses);
 	mVariablesDict.reserve(mVariablesVector.size() + 2);
 	for (int i = 0; i < mVariablesVector.size(); ++i)
 	{
@@ -80,7 +79,7 @@ Shader::Shader(ID3D12Device* device, const std::string& csoFilePath)
 		mVariablesDict[ShaderID::PropertyToID(variable.name)] = i;
 	}
 
-	vector<CD3DX12_ROOT_PARAMETER> allParameter;
+	std::vector<CD3DX12_ROOT_PARAMETER> allParameter;
 	auto staticSamplers = d3dUtil::GetStaticSamplers();
 	allParameter.reserve(VariableLength());
 	std::vector< CD3DX12_DESCRIPTOR_RANGE> allTexTable;
@@ -189,7 +188,7 @@ Shader::Shader(
 
 	}
 
-	vector<CD3DX12_ROOT_PARAMETER> allParameter;
+	std::vector<CD3DX12_ROOT_PARAMETER> allParameter;
 	auto staticSamplers = d3dUtil::GetStaticSamplers();
 	allParameter.reserve(VariableLength());
 	std::vector< CD3DX12_DESCRIPTOR_RANGE> allTexTable;

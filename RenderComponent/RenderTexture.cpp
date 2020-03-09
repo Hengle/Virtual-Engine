@@ -27,7 +27,7 @@ void RenderTexture::SetViewport(ID3D12GraphicsCommandList* commandList)
 void RenderTexture::GetColorUAVDesc(D3D12_UNORDERED_ACCESS_VIEW_DESC& uavDesc, UINT targetMipLevel)
 {
 	UINT maxLevel = Resource->GetDesc().MipLevels - 1;
-	targetMipLevel = min(targetMipLevel, maxLevel);
+	targetMipLevel = Min(targetMipLevel, maxLevel);
 	uavDesc.Format = Resource->GetDesc().Format;
 	switch (dimension)
 	{
@@ -126,7 +126,7 @@ size_t RenderTexture::GetSizeFromProperty(
 	UINT mipCount,
 	RenderTextureState initState)
 {
-	mipCount = max<uint>(mipCount, 1);
+	mipCount = Max<uint>(mipCount, 1);
 	UINT arraySize;
 	switch (type)
 	{
@@ -137,7 +137,7 @@ size_t RenderTexture::GetSizeFromProperty(
 		arraySize = 1;
 		break;
 	default:
-		arraySize = max<uint>(1, depthCount);
+		arraySize = Max<uint>(1, depthCount);
 		break;
 	}
 	if (rtFormat.usage == RenderTextureUsage::ColorBuffer)
@@ -220,7 +220,7 @@ size_t RenderTexture::GetSizeFromProperty(
 			mViewport({ 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f }),
 			mScissorRect({ 0, 0, (int)width, (int)height })
 		{
-			mipCount = max<uint>(mipCount, 1);
+			mipCount = Max<uint>(mipCount, 1);
 			dimension = type;
 			mWidth = width;
 			mHeight = height;
@@ -234,7 +234,7 @@ size_t RenderTexture::GetSizeFromProperty(
 				arraySize = 1;
 				break;
 			default:
-				arraySize = max<uint>(1, depthCount);
+				arraySize = Max<uint>(1, depthCount);
 				break;
 			}
 			if (rtFormat.usage == RenderTextureUsage::ColorBuffer)

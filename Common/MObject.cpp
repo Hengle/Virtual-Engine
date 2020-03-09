@@ -36,6 +36,18 @@ void PtrLink::Destroy() noexcept
 	}
 }
 
+void PtrWeakLink::Destroy() noexcept
+{
+	auto bb = heapPtr;
+	heapPtr = nullptr;
+	if (bb && PtrLink::globalEnabled && bb->ptr)
+	{
+		auto a = bb->ptr;
+		bb->ptr = nullptr;
+		delete a;
+	}
+}
+
 void PtrLink::Dispose() noexcept
 {
 	auto a = heapPtr;

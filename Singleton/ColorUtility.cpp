@@ -68,9 +68,9 @@ const float logC_f = 0.092819f;
 
 	float gammaOffset = (float)color.GetW() + 1;
 	return {
-		1 / max(M.x + gammaOffset, 1e-03f),
-		1 / max(M.y + gammaOffset, 1e-03f),
-		1 / max(M.z + gammaOffset, 1e-03f)
+		1 / Max(M.x + gammaOffset, 1e-03f),
+		1 / Max(M.y + gammaOffset, 1e-03f),
+		1 / Max(M.z + gammaOffset, 1e-03f)
 	};
 }
 

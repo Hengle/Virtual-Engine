@@ -198,33 +198,33 @@ Math::Matrix4 XM_CALLCONV mul
 	const Math::Matrix4& m2);
 
 template <typename T>
-constexpr inline T max(const T& a, const T& b)
+constexpr inline T Max(const T& a, const T& b)
 {
 	return (((a) > (b)) ? (a) : (b));
 }
 
 template <typename T>
-constexpr inline T min(const T& a, const T& b)
+constexpr inline T Min(const T& a, const T& b)
 {
 	return (((a) < (b)) ? (a) : (b));
 }
 template <>
-inline Math::Vector3 max<Math::Vector3>(const Math::Vector3& vec1, const Math::Vector3& vec2)
+inline Math::Vector3 Max<Math::Vector3>(const Math::Vector3& vec1, const Math::Vector3& vec2)
 {
 	return _mm_max_ps((XMVECTOR&)vec1, (XMVECTOR&)vec2);
 }
 template <>
-inline Math::Vector4 max<Math::Vector4>(const Math::Vector4& vec1, const Math::Vector4& vec2)
+inline Math::Vector4 Max<Math::Vector4>(const Math::Vector4& vec1, const Math::Vector4& vec2)
 {
 	return _mm_max_ps((XMVECTOR&)vec1, (XMVECTOR&)vec2);
 }
 template <>
-inline Math::Vector3 min<Math::Vector3>(const Math::Vector3& vec1, const Math::Vector3& vec2)
+inline Math::Vector3 Min<Math::Vector3>(const Math::Vector3& vec1, const Math::Vector3& vec2)
 {
 	return _mm_min_ps((XMVECTOR&)vec1, (XMVECTOR&)vec2);
 }
 template <>
-inline Math::Vector4 min<Math::Vector4>(const Math::Vector4& vec1, const Math::Vector4& vec2)
+inline Math::Vector4 Min<Math::Vector4>(const Math::Vector4& vec1, const Math::Vector4& vec2)
 {
 	return _mm_min_ps((XMVECTOR&)vec1, (XMVECTOR&)vec2);
 }

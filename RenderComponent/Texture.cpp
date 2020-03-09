@@ -54,6 +54,9 @@ void ReadData(const std::string& str, TextureData& headerResult, std::vector<cha
 	case TextureData::LoadFormat_BC7:
 		stride = 1;
 		break;
+	case TextureData::LoadFormat_BC6H:
+		stride = 1;
+		break;
 	}
 	size_t size = 0;
 	UINT depth = headerResult.depth;
@@ -65,11 +68,11 @@ void ReadData(const std::string& str, TextureData& headerResult, std::vector<cha
 		for (UINT i = 0; i < headerResult.mipCount; ++i)
 		{
 			UINT currentChunkSize = stride * width * height;
-			size += max<uint>(currentChunkSize, 512);
+			size += Max<uint>(currentChunkSize, 512);
 			width /= 2;
 			height /= 2;
-			width = max<uint>(1, width);
-			height = max<uint>(1, height);
+			width = Max<uint>(1, width);
+			height = Max<uint>(1, height);
 		}
 	}
 	dataResult.resize(size);
@@ -164,6 +167,11 @@ public:
 			bcCompress = true;
 			currentOffset = 1;
 			break;
+		case TextureData::LoadFormat_BC6H:
+			texFormat = DXGI_FORMAT_BC6H_UF16;
+			bcCompress = true;
+			currentOffset = 1;
+			break;
 		}
 		if (type == TextureDimension::Tex3D)
 		{
@@ -182,7 +190,7 @@ public:
 					texFormat, currentOffset
 				);
 				UINT chunkOffset = currentOffset * curWidth * curHeight;
-				offset += max<uint>(chunkOffset, 512);
+				offset += Max<uint>(chunkOffset, 512);
 				curWidth /= 2;
 				curHeight /= 2;
 			}
@@ -225,7 +233,7 @@ public:
 						);
 					}
 					UINT chunkOffset = currentOffset * curWidth * curHeight;
-					offset += max<uint>(chunkOffset, 512);
+					offset += Max<uint>(chunkOffset, 512);
 					curWidth /= 2;
 					curHeight /= 2;
 				}
@@ -276,11 +284,14 @@ Texture::Texture(
 	case TextureData::LoadFormat_BC7:
 		mFormat = DXGI_FORMAT_BC7_UNORM;
 		break;
+	case TextureData::LoadFormat_BC6H:
+		mFormat = DXGI_FORMAT_BC6H_UF16;
+		break;
 	}
 	this->depthSlice = depth;
 	this->mWidth = width;
 	this->mHeight = height;
-	mipCount = max<uint>(1, mipCount);
+	mipCount = Max<uint>(1, mipCount);
 	this->mipCount = mipCount;
 	D3D12_RESOURCE_DESC texDesc;
 	ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
@@ -373,8 +384,11 @@ Texture::Texture(
 	case TextureData::LoadFormat_BC7:
 		mFormat = DXGI_FORMAT_BC7_UNORM;
 		break;
+	case TextureData::LoadFormat_BC6H:
+		mFormat = DXGI_FORMAT_BC6H_UF16;
+		break;
 	}
-	data.mipCount = max<uint>(1, data.mipCount);
+	data.mipCount = Max<uint>(1, data.mipCount);
 	this->depthSlice = data.depth;
 	this->mWidth = data.width;
 	this->mHeight;

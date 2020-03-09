@@ -3,7 +3,7 @@
 #include "ShaderUniforms.h"
 #include "../Common/StringUtility.h"
 using namespace SCompile;
-#define StructuredBuffer SCompile::StructuredBuffer
+#define StructuredBuffer SCompile::StructuredBuffer_S
 int ShaderCompiler::shaderIDCount = 0;
 
 std::unordered_map<Shader*, int> ShaderCompiler::gbufferShaderIDs;
@@ -223,3 +223,4 @@ void ShaderCompiler::Dispose()
 	mComputeShaders.clear();
 	mShaders.clear();
 }
+#undef StructuredBuffer

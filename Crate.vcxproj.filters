@@ -15,11 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Crate.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Singleton\FrameResource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -128,9 +123,6 @@
     <ClCompile Include="RenderComponent\UploadBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CrateApp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Singleton\ColorUtility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -228,6 +220,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenderComponent\ShaderIO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -548,5 +543,10 @@
   <ItemGroup>
     <None Include="Wheel.vmesh" />
     <None Include="Test.bytes" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="VirtualEngine.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

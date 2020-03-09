@@ -17,7 +17,7 @@
 #include <DirectXCollision.h>
 #include <string>
 #include <memory>
-#include <algorithm>
+//#include <algorithm>
 #include <vector>
 #include <array>
 #include <unordered_map>

@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Crate.rc" />
+    <ResourceCompile Include="VirtualEngine.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CJsonObject\cJSON.c" />
@@ -35,7 +35,7 @@
     <ClCompile Include="Common\MObject.cpp" />
     <ClCompile Include="Common\Random.cpp" />
     <ClCompile Include="Common\StringUtility.cpp" />
-    <ClCompile Include="CrateApp.cpp" />
+    <ClCompile Include="VEngine.cpp" />
     <ClCompile Include="JobSystem\JobBucket.cpp" />
     <ClCompile Include="JobSystem\JobHandle.cpp" />
     <ClCompile Include="JobSystem\JobNode.cpp" />
@@ -208,8 +208,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{99BAD649-F897-4374-B69D-EEB3F9CAE027}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Crate</RootNamespace>
+    <RootNamespace>Virtual-Engine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Virtual-Engine</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -223,6 +224,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableUnitySupport>true</EnableUnitySupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -237,6 +239,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableUnitySupport>true</EnableUnitySupport>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -296,6 +299,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <OmitFramePointers>false</OmitFramePointers>
+      <MinFilesInUnityFile>20</MinFilesInUnityFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -340,6 +344,7 @@
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <OmitFramePointers>true</OmitFramePointers>
+      <MinFilesInUnityFile>20</MinFilesInUnityFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

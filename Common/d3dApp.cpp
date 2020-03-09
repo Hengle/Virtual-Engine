@@ -292,11 +292,11 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			PostQuitMessage(0);
 		}
-		wParam = min<uint>(wParam, 105);
+		wParam = Min<uint>(wParam, 105);
 		Input::Input::inputData[!Input::inputDataSwitcher].keyUpArray[wParam] = true;
 		return 0;
 	case WM_KEYDOWN:
-		wParam = min<uint>(wParam, 105);
+		wParam = Min<uint>(wParam, 105);
 		Input::Input::inputData[!Input::inputDataSwitcher].keyDownArray[wParam] = true;
 		return 0;
 	}

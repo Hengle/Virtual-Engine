@@ -1,15 +1,14 @@
-#include "Shader.h"
-#include <fstream>
-#include "ComputeShader.h"
 #include "ShaderIO.h"
-using namespace std;
+#include <fstream>
+
+
 template <typename T>
-void DragData(ifstream& ifs, T& data)
+void DragData(std::ifstream& ifs, T& data)
 {
 	ifs.read((char*)&data, sizeof(T));
 }
 template <>
-void DragData<string>(ifstream& ifs, string& str)
+void DragData<std::string>(std::ifstream& ifs, std::string& str)
 {
 	uint32_t length = 0;
 	DragData<uint32_t>(ifs, length);
@@ -17,21 +16,21 @@ void DragData<string>(ifstream& ifs, string& str)
 	str.resize(length);
 	ifs.read(str.data(), length);
 }
-void DecodeShader(
-	const string& fileName,
-	vector<ShaderVariable>& vars,
-	vector<Pass>& passes)
+void ShaderIO::DecodeShader(
+	const std::string& fileName,
+	std::vector<ShaderVariable>& vars,
+	std::vector<Pass>& passes)
 {
 	vars.clear();
 	passes.clear();
 	uint varSize = 0;
-	ifstream ifs(fileName, ios::binary);
+	std::ifstream ifs(fileName, std::ios::binary);
 	if (!ifs) return;
 	DragData<uint>(ifs, varSize);
 	vars.resize(varSize);
 	for (auto i = vars.begin(); i != vars.end(); ++i)
 	{
-		DragData<string>(ifs, i->name);
+		DragData<std::string>(ifs, i->name);
 		DragData<ShaderVariableType>(ifs, i->type);
 		DragData<uint>(ifs, i->tableSize);
 		DragData<uint>(ifs, i->registerPos);
@@ -39,7 +38,7 @@ void DecodeShader(
 	}
 	uint functionCount = 0;
 	DragData<uint>(ifs, functionCount);
-	vector<Microsoft::WRL::ComPtr<ID3DBlob>> functions(functionCount);
+	std::vector<Microsoft::WRL::ComPtr<ID3DBlob>> functions(functionCount);
 	for (uint i = 0; i < functionCount; ++i)
 	{
 		uint64_t codeSize = 0;
@@ -66,21 +65,21 @@ void DecodeShader(
 	}
 }
 
-void DecodeComputeShader(
-	const string& fileName,
-	vector<ComputeShaderVariable>& vars,
-	vector<Microsoft::WRL::ComPtr<ID3DBlob>>& datas)
+void ShaderIO::DecodeComputeShader(
+	const std::string& fileName,
+	std::vector<ComputeShaderVariable>& vars,
+	std::vector<Microsoft::WRL::ComPtr<ID3DBlob>>& datas)
 {
 	vars.clear();
 	datas.clear();
 	uint varSize = 0;
-	ifstream ifs(fileName, ios::binary);
+	std::ifstream ifs(fileName, std::ios::binary);
 	if (!ifs) return;
 	DragData<uint>(ifs, varSize);
 	vars.resize(varSize);
 	for (auto i = vars.begin(); i != vars.end(); ++i)
 	{
-		DragData<string>(ifs, i->name);
+		DragData<std::string>(ifs, i->name);
 		DragData<ComputeShaderVariable::Type>(ifs, i->type);
 		DragData<uint>(ifs, i->tableSize);
 		DragData<uint>(ifs, i->registerPos);

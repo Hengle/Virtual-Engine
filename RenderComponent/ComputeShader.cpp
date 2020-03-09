@@ -9,7 +9,6 @@
 #include "ShaderIO.h"
 
 using Microsoft::WRL::ComPtr;
-using namespace std;
 struct ComputeShaderCompiler
 {
 	ComputeShader* shader;
@@ -39,14 +38,14 @@ ComputeShader::ComputeShader(
 	const std::string& csoFilePath,
 	ID3D12Device* device)
 {
-	DecodeComputeShader(csoFilePath, mVariablesVector, csShaders);
+	ShaderIO::DecodeComputeShader(csoFilePath, mVariablesVector, csShaders);
 	mVariablesDict.reserve(mVariablesVector.size() + 2);
 	for (int i = 0; i < mVariablesVector.size(); ++i)
 	{
 		ComputeShaderVariable& variable = mVariablesVector[i];
 		mVariablesDict[ShaderID::PropertyToID(variable.name)] = i;
 	}
-	vector<CD3DX12_ROOT_PARAMETER> allParameter;
+	std::vector<CD3DX12_ROOT_PARAMETER> allParameter;
 	auto staticSamplers = d3dUtil::GetStaticSamplers();
 	allParameter.reserve(VariableLength());
 	std::vector< CD3DX12_DESCRIPTOR_RANGE> allTexTable;
@@ -137,7 +136,7 @@ ComputeShader::ComputeShader(
 }
 
 ComputeShader::ComputeShader(
-	const string& compilePath,
+	const std::string& compilePath,
 	std::string* kernelName, UINT kernelCount,
 	ComputeShaderVariable* allShaderVariables, UINT varSize,
 	ID3D12Device* device,
@@ -153,7 +152,7 @@ ComputeShader::ComputeShader(
 
 	}
 
-	vector<CD3DX12_ROOT_PARAMETER> allParameter;
+	std::vector<CD3DX12_ROOT_PARAMETER> allParameter;
 	auto staticSamplers = d3dUtil::GetStaticSamplers();
 	allParameter.reserve(VariableLength());
 	std::vector< CD3DX12_DESCRIPTOR_RANGE> allTexTable;

@@ -34,7 +34,7 @@ namespace GBufferGlobalVars
 	const uint TEX_COUNT = sizeof(TextureIndices) / 4;
 	uint _DefaultMaterials;
 	RenderTexture* gbufferTempRT[10];
-	LightingComponent* lightComp;
+	LightingComponent* lightComp_GBufferGlobal;
 }
 using namespace GBufferGlobalVars;
 
@@ -146,14 +146,14 @@ public:
 		}
 
 
-		LightFrameData* lightFrameData = (LightFrameData*)resource->GetPerCameraResource(lightComp, cam, []()->LightFrameData*
+		LightFrameData* lightFrameData = (LightFrameData*)resource->GetPerCameraResource(lightComp_GBufferGlobal, cam, []()->LightFrameData*
 		{
 #ifndef NDEBUG
 			throw "No Light Data Exception!";
 #endif
 			return nullptr;	//Get Error if there is no light coponent in pipeline
 		});
-		LightCameraData* lightCameraData = (LightCameraData*)cam->GetResource(lightComp, []()->LightCameraData*
+		LightCameraData* lightCameraData = (LightCameraData*)cam->GetResource(lightComp_GBufferGlobal, []()->LightCameraData*
 			{
 #ifndef NDEBUG
 				throw "No Light Data Exception!";
@@ -174,7 +174,7 @@ public:
 			gbufferShader->SetResource(commandList, _Cubemap, worldHeap, 0);
 			gbufferShader->SetResource(commandList, _DefaultMaterials, world->GetPBRMaterialManager()->GetMaterialBuffer(), 0);
 			gbufferShader->SetStructuredBufferByAddress(commandList, GBufferComponent::_AllLight, lightFrameData->lightsInFrustum.GetAddress(0));
-			gbufferShader->SetStructuredBufferByAddress(commandList, GBufferComponent::_LightIndexBuffer, lightComp->lightIndexBuffer->GetAddress(0, 0));
+			gbufferShader->SetStructuredBufferByAddress(commandList, GBufferComponent::_LightIndexBuffer, lightComp_GBufferGlobal->lightIndexBuffer->GetAddress(0, 0));
 			gbufferShader->SetResource(commandList, GBufferComponent::LightCullCBuffer, &lightCameraData->lightCBuffer, frameIndex);
 			gbufferShader->SetResource(commandList, GBufferComponent::TextureIndices, &camData->texIndicesBuffer, frameIndex);
 		};
@@ -271,7 +271,7 @@ void GBufferComponent::Initialize(ID3D12Device* device, ID3D12GraphicsCommandLis
 {
 	SetCPUDepending<LightingComponent>();
 	SetGPUDepending<LightingComponent>();
-	lightComp = RenderPipeline::GetComponent<LightingComponent>();
+	lightComp_GBufferGlobal = RenderPipeline::GetComponent<LightingComponent>();
 	depthComp = RenderPipeline::GetComponent<DepthComponent>();
 	tempRTRequire.resize(6);
 	GBufferRunnable::_GreyTex = ShaderID::PropertyToID("_GreyTex");

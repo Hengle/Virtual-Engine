@@ -50,7 +50,7 @@ namespace SCompile {
 			return ComputeShaderVariable(name, ComputeShaderVariable::SRVDescriptorHeap, tableSize, regis, space);
 		}
 	};
-	struct StructuredBuffer
+	struct StructuredBuffer_S
 	{
 		inline static ShaderVariable GetShaderVar(UINT regis, UINT space, const std::string& name)
 		{

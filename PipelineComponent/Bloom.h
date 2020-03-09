@@ -145,8 +145,8 @@ public:
 					texDesc.Width = width;
 					texDesc.Height = height;
 					poolSize += rtSize * 2;
-					width = max<uint>(width / 2, 1);
-					height = max<uint>(height / 2, 1);
+					width = Max<uint>(width / 2, 1);
+					height = Max<uint>(height / 2, 1);
 				}
 				UpdateCheck(poolSize, device);
 				width = mWidth;
@@ -163,8 +163,8 @@ public:
 					currentOffset += l.down->GetResourceSize();
 					l.up.New(device, width, height, format, TextureDimension::Tex2D, 1, 1, RenderTextureState::Generic_Read, heap, currentOffset);
 					currentOffset += l.up->GetResourceSize();
-					width = max<uint>(width / 2, 1);
-					height = max<uint>(height / 2, 1);
+					width = Max<uint>(width / 2, 1);
+					height = Max<uint>(height / 2, 1);
 				}
 			}
 		}
@@ -209,8 +209,8 @@ public:
 		float rh = ratio > 0 ? ratio : 0;
 		uint tw = (uint)(width / (2.0f - rw));
 		uint th = (uint)(height / (2.0f - rh));
-		uint s = max(tw, th);
-		float logs = log2(s) + min<float>(diffusion, 10) - 10;
+		uint s = Max(tw, th);
+		float logs = log2(s) + Min<float>(diffusion, 10) - 10;
 		uint logs_i = (uint)(logs);
 		uint iterations = MathHelper::Clamp<uint>(logs_i, 1, k_MaxPyramidSize);
 		BloomFrameResource* frameRes = (BloomFrameResource*)res->GetPerCameraResource(this, cam, [&]()->BloomFrameResource*

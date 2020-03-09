@@ -105,6 +105,11 @@ ObjectPtr<MObject> AssetDatabase::GetLoadedObject(const std::string& str)
 	{
 		return nullptr;
 	}
+	if (!ite->second)
+	{
+		loadedObjects.erase(ite);
+		return nullptr;
+	}
 	return ite->second;
 }
 

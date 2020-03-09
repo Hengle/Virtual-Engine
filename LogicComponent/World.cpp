@@ -95,9 +95,9 @@ World::World(ID3D12GraphicsCommandList* commandList, ID3D12Device* device) :
 	//meshRenderer = new MeshRenderer(trans.operator->(), device, mesh, ShaderCompiler::GetShader("OpaqueStandard"));
 	
 	GeometryGenerator geoGen;
-	mesh = ObjectPtr<Mesh>::MakePtr(Mesh::LoadMeshFromFile("Resource/Wheel.vmesh", device,
+	/*mesh = ObjectPtr<Mesh>::MakePtr(Mesh::LoadMeshFromFile("Resource/Wheel.vmesh", device,
 		true, true, true, false, true, true, true, false));
-	
+	*/
 	if (!mesh)
 	{
 		BuildShapeGeometry(geoGen.CreateBox(1, 1, 1, 1), mesh, device, commandList, nullptr);
@@ -184,7 +184,7 @@ void World::Update(FrameResource* resource, ID3D12Device* device)
 	if (!testTex)
 	{
 		testTex = ObjectPtr<ITexture>::MakePtr(new Texture(device, "Resource/testTex.vtex"));
-		pbrMat->SetAlbedoTexture(testTex.CastTo<ITexture>());
+		pbrMat->SetEmissionTexture(testTex.CastTo<ITexture>());
 		pbrMat->UpdateMaterialToBuffer();
 	}
 }

@@ -81,7 +81,7 @@ void GetCascadeShadowmapMatrices(
 			aspect, distances[i + 1], nextCorners);
 		float farDist = distance(nextCorners[0], nextCorners[3]);
 		float crossDist = distance(lastCorners[0], nextCorners[3]);
-		float maxDist = max(farDist, crossDist);
+		float maxDist = Max(farDist, crossDist);
 		Matrix4 projMatrix = XMMatrixOrthographicLH(maxDist, maxDist, 0, -zDepth);
 		Matrix4 sunWorldToLocal = inverse(sunLocalToWorld);
 		Vector4 minBoundingPoint, maxBoundingPoint;
@@ -96,8 +96,8 @@ void GetCascadeShadowmapMatrices(
 			Vector4& c = (Vector4&)corners[j];
 			c.SetW(1);
 			Vector4 pointLocalPos = mul(sunWorldToLocal, c);
-			minBoundingPoint = min(pointLocalPos, minBoundingPoint);
-			maxBoundingPoint = max(pointLocalPos, maxBoundingPoint);
+			minBoundingPoint = Min(pointLocalPos, minBoundingPoint);
+			maxBoundingPoint = Max(pointLocalPos, maxBoundingPoint);
 		}
 		Vector4 localPosition = (minBoundingPoint + maxBoundingPoint) * 0.5f;
 		localPosition.SetZ(maxBoundingPoint.GetZ());
@@ -246,8 +246,8 @@ public:
 				frustumMaxPoint = frustumMinPoint;
 				for (uint j = 1; j < 8; ++j)
 				{
-					frustumMinPoint = min(frustumMinPoint, frustumPoints[j]);
-					frustumMaxPoint = max(frustumMaxPoint, frustumPoints[j]);
+					frustumMinPoint = Min(frustumMinPoint, frustumPoints[j]);
+					frustumMaxPoint = Max(frustumMaxPoint, frustumPoints[j]);
 				}
 
 				commandList->OMSetRenderTargets(

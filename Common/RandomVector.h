@@ -11,7 +11,7 @@ private:
 	{
 		if (newCapacity <= capacity) return;
 		uint maxCapa = capacity * 2;
-		newCapacity = max(newCapacity, maxCapa);
+		newCapacity = Max(newCapacity, maxCapa);
 		std::pair<T, uint*>* newArr = (std::pair<T, uint*>*)malloc(sizeof(std::pair<T, uint*>) * newCapacity);
 		for (uint i = 0; i < size; ++i)
 		{

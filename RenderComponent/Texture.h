@@ -25,7 +25,8 @@ struct TextureData
 		LoadFormat_RGFLOAT16 = 4,
 		LoadFormat_RG16 = 5,
 		LoadFormat_BC7 = 6,
-		LoadFormat_Num = 7
+		LoadFormat_BC6H = 7,
+		LoadFormat_Num = 8
 	};
 	LoadFormat format;
 };

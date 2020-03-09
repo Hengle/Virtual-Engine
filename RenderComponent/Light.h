@@ -62,7 +62,7 @@ public:
 	float GetIntensity() const { return intensity; }
 	float SetIntensity(float intensity) { 
 		
-		intensity = max<float>(0, intensity);
+		intensity = Max<float>(0, intensity);
 		isDirty = true;
 		this->intensity = intensity; 
 	}
@@ -70,16 +70,16 @@ public:
 	void SetSpotAngle(float angle)
 	{
 		isDirty = true;
-		angle = max<float>(1, angle);
+		angle = Max<float>(1, angle);
 		this->angle = angle;
 	}
 	DirectX::XMFLOAT3 GetColor() const { return color; }
 	void SetColor(DirectX::XMFLOAT3 value)
 	{
 		isDirty = true;
-		value.x = max<float>(0, value.x);
-		value.y = max<float>(0, value.y);
-		value.z = max<float>(0, value.z);
+		value.x = Max<float>(0, value.x);
+		value.y = Max<float>(0, value.y);
+		value.z = Max<float>(0, value.z);
 		color = value;
 	}
 	bool ShadowEnabled() const { return enableShadow; }
@@ -90,7 +90,7 @@ public:
 	}
 	void SetShadowSoftValue(float value)
 	{
-		value = max<float>(0, value);
+		value = Max<float>(0, value);
 		isDirty = true;
 		shadowSoftValue = value;
 	}
@@ -101,7 +101,7 @@ public:
 	void SetShadowBias(float value)
 	{
 		isDirty = true;
-		value = max(0.01f, value);
+		value = Max(0.01f, value);
 		shadowBias = value;
 	}
 	float GetShadowNormalBias() const
@@ -111,7 +111,7 @@ public:
 	void SetShadowNormalBias(float value)
 	{
 		isDirty = true;
-		value = max(0.01f, value);
+		value = Max(0.01f, value);
 		shadowNormalBias = value;
 	}
 	float GetShadowNearPlane() const
@@ -121,7 +121,7 @@ public:
 	void SetShadowNearPlane(float value)
 	{
 		isDirty = true;
-		value = max(0.1f, value);
+		value = Max(0.1f, value);
 		shadowNearPlane = value;
 	}
 	LightType GetLightType() const

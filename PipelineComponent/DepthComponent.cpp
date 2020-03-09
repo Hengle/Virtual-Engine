@@ -12,7 +12,7 @@
 using namespace DirectX;
 namespace DepthGlobal
 {
-	PrepareComponent* prepareComp = nullptr;
+	PrepareComponent* prepareComp_Depth = nullptr;
 	ComputeShader* hizGenerator;
 	const uint2 hizResolution = { 1024, 512 };
 	uint _CameraDepthTexture;
@@ -75,7 +75,7 @@ void DepthComponent::Initialize(ID3D12Device* device, ID3D12GraphicsCommandList*
 	motionVectorBuffer.descriptor.rtDesc.depthSlice = 1;
 	motionVectorBuffer.descriptor.rtDesc.type = TextureDimension::Tex2D;
 	motionVectorBuffer.descriptor.rtDesc.state = RenderTextureState::Render_Target;
-	prepareComp = RenderPipeline::GetComponent<PrepareComponent>();
+	prepareComp_Depth = RenderPipeline::GetComponent<PrepareComponent>();
 	depthPrepassContainer = new PSOContainer(DXGI_FORMAT_D32_FLOAT, 0, nullptr);
 	hizGenerator = ShaderCompiler::GetComputeShader("HIZGenerator");
 	_DepthTexture = ShaderID::PropertyToID("_DepthTexture");
@@ -130,11 +130,11 @@ public:
 			device,
 			resource,
 			cullEle,
-			prepareComp->frustumPlanes,
-			*(XMFLOAT3*)&prepareComp->frustumMinPos,
-			*(XMFLOAT3*)&prepareComp->frustumMaxPos,
-			prepareComp->passConstants.nonJitterVP,
-			prepareComp->passConstants.lastVP,
+			prepareComp_Depth->frustumPlanes,
+			*(XMFLOAT3*)&prepareComp_Depth->frustumMinPos,
+			*(XMFLOAT3*)&prepareComp_Depth->frustumMaxPos,
+			prepareComp_Depth->passConstants.nonJitterVP,
+			prepareComp_Depth->passConstants.lastVP,
 			cameraRes->descIndex,
 			true
 		);

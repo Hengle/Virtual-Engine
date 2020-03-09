@@ -16,7 +16,7 @@ private:
 	std::mutex mtx;
 	Storage<std::thread, 1> threadStorage;
 	std::thread* loadingThread;
-	std::unordered_map<std::string, ObjectPtr<MObject>> loadedObjects;
+	std::unordered_map<std::string, ObjWeakPtr<MObject>> loadedObjects;
 	std::unordered_map<std::string, uint> resourceReferenceCount;
 	std::vector<AssetReference> loadList;
 	bool shouldWaiting = false;
@@ -44,12 +44,14 @@ public:
 		loadedObjects.insert_or_assign(str, obj);
 	}
 	void MainThreadUpdate();
+	
 	void RemoveLoadedObjects(
 		const std::string& str)
 	{
 		std::lock_guard<std::mutex> lck(mtx);
 		loadedObjects.erase(str);
 	}
+
 	ObjectPtr<MObject> GetLoadedObject(const std::string& str);
 	bool GetPath(const std::string& guid, std::string& path)
 	{

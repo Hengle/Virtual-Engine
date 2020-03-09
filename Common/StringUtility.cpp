@@ -1,7 +1,6 @@
 #include "StringUtility.h"
-using namespace std;
 namespace StringUtil {
-	void IndicesOf(const string& str, const string& sign, vector<int>& v)
+	void IndicesOf(const std::string& str, const std::string& sign, std::vector<int>& v)
 	{
 		v.clear();
 		if (str.empty()) return;
@@ -41,7 +40,7 @@ namespace StringUtil {
 	{
 		lines.clear();
 		lines.reserve(32);
-		string buffer;
+		std::string buffer;
 		buffer.reserve(32);
 		for (size_t i = 0; i < size; ++i)
 		{
@@ -68,7 +67,7 @@ namespace StringUtil {
 	{
 		lines.clear();
 		lines.reserve(32);
-		string buffer;
+		std::string buffer;
 		buffer.reserve(32);
 		for (size_t i = 0; i < str.length(); ++i)
 		{
@@ -92,10 +91,10 @@ namespace StringUtil {
 
 	void ReadLines(std::ifstream& ifs, std::vector<std::string>& lines)
 	{
-		ifs.seekg(0, ios::end);
+		ifs.seekg(0, std::ios::end);
 		int64_t size = ifs.tellg();
-		ifs.seekg(0, ios::beg);
-		vector<char> buffer(size + 1);
+		ifs.seekg(0, std::ios::beg);
+		std::vector<char> buffer(size + 1);
 		ifs.read(buffer.data(), size);
 		CutToLine(buffer.data(), size, lines);
 	}
@@ -135,11 +134,11 @@ namespace StringUtil {
 
 	void Split(const std::string& str, char sign, std::vector<std::string>& v)
 	{
-		vector<int> indices;
+		std::vector<int> indices;
 		IndicesOf(str, sign, indices);
 		v.clear();
 		v.reserve(10);
-		string s;
+		std::string s;
 		s.reserve(str.size());
 		int startPos = 0;
 		for (auto index = indices.begin(); index != indices.end(); ++index)
@@ -162,13 +161,13 @@ namespace StringUtil {
 			v.push_back(s);
 	}
 
-	void Split(const string& str, const string& sign, vector<string>& v)
+	void Split(const std::string& str, const std::string& sign, std::vector<std::string>& v)
 	{
-		vector<int> indices;
+		std::vector<int> indices;
 		IndicesOf(str, sign, indices);
 		v.clear();
 		v.reserve(10);
-		string s;
+		std::string s;
 		s.reserve(str.size());
 		int startPos = 0;
 		for (auto index = indices.begin(); index != indices.end(); ++index)

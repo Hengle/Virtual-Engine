@@ -49,7 +49,7 @@ void PBRMaterial::SetEmissionTexture(const ObjectPtr<ITexture>& tex)
 
 PBRMaterialManager::PBRMaterialManager(ID3D12Device* device, uint initSize) :
 	ubuffer(std::unique_ptr<UploadBuffer>(new UploadBuffer(device, initSize, false, sizeof(StandardPBRMaterial)))),
-	capacity(max<uint>(initSize, 3))
+	capacity(Max<uint>(initSize, 3))
 {
 	removedIndex.reserve(initSize);
 }

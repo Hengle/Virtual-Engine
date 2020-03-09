@@ -109,7 +109,7 @@ struct LightingRunnable
 		XMVECTOR vec[6];
 		memcpy(vec, prepareComp->frustumPlanes, sizeof(XMVECTOR) * 6);
 		XMVECTOR camForward = cam->GetLook();
-		vec[0] = MathLib::GetPlane(std::move(camForward), std::move((XMVECTOR)cam->GetPosition() + min<double>(cam->GetFarZ(), clusterLightFarPlane) * camForward));
+		vec[0] = MathLib::GetPlane(std::move(camForward), std::move((XMVECTOR)cam->GetPosition() + Min<double>(cam->GetFarZ(), clusterLightFarPlane) * camForward));
 		Light::GetLightingList(lights,
 			vec,
 			std::move(prepareComp->frustumMinPos),
@@ -124,7 +124,7 @@ struct LightingRunnable
 			});
 		if (lightData->lightsInFrustum.GetElementCount() < lights.size())
 		{
-			uint maxSize = max<size_t>(lights.size(), (uint)(lightData->lightsInFrustum.GetElementCount() * 1.5));
+			uint maxSize = Max<size_t>(lights.size(), (uint)(lightData->lightsInFrustum.GetElementCount() * 1.5));
 			lightData->lightsInFrustum.Create(device, maxSize, false, sizeof(LightCommand));
 		}
 		LightCullCBuffer& cb = *(LightCullCBuffer*)camData->lightCBuffer.GetMappedDataPtr(frameIndex);

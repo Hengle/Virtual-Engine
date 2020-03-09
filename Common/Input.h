@@ -75,7 +75,7 @@ enum class KeyCode : uint
 	Numpad9 = 105
 };
 class D3DApp;
-class CrateApp;
+class VEngine;
 struct InputData
 {
 	BitArray keyDownArray;
@@ -108,7 +108,7 @@ struct InputData
 class Input
 {
 	friend class D3DApp;
-	friend class CrateApp;
+	friend class VEngine;
 private:
 	static InputData inputData[2];
 	static bool inputDataSwitcher;

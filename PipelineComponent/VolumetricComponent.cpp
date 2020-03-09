@@ -19,13 +19,13 @@
 #include "../RenderComponent/RenderTexture.h"
 namespace VolumetricGlobal
 {
-	LightingComponent* lightComp;
-	PrepareComponent* prepareComp;
+	LightingComponent* lightComp_Volume;
+	PrepareComponent* prepareComp_VolumeComp;
 	const uint3 FROXEL_RESOLUTION = { 160, 90, 128 };
 	uint LightCullCBuffer_ID;
 	uint FroxelParams;
 	uint _GreyTex;
-	uint _VolumeTex;
+	uint _VolumeTex_ID_VolumeComponent;
 	uint _LastVolume;
 	uint _RWLastVolume;
 	ComputeShader* froxelShader;
@@ -37,6 +37,7 @@ namespace VolumetricGlobal
 	float availableDistance = 32;
 	float fogDensity = 0;
 }
+#define _VolumeTex _VolumeTex_ID_VolumeComponent
 std::unique_ptr<RenderTexture> VolumetricComponent::volumeRT;
 using namespace VolumetricGlobal;
 struct FroxelParamsStruct
@@ -84,7 +85,7 @@ struct VolumetricRunnable
 		{
 			return new VolumetricCameraData(device);
 		});
-		LightCameraData* lightData = (LightCameraData*)cam->GetResource(lightComp, [&]()->LightCameraData*
+		LightCameraData* lightData = (LightCameraData*)cam->GetResource(lightComp_Volume, [&]()->LightCameraData*
 		{
 			throw "Null!";
 		});
@@ -128,8 +129,8 @@ struct VolumetricRunnable
 
 void VolumetricComponent::Initialize(ID3D12Device* device, ID3D12GraphicsCommandList* commandList)
 {
-	lightComp = RenderPipeline::GetComponent<LightingComponent>();
-	prepareComp = RenderPipeline::GetComponent<PrepareComponent>();
+	lightComp_Volume = RenderPipeline::GetComponent<LightingComponent>();
+	prepareComp_VolumeComp = RenderPipeline::GetComponent<PrepareComponent>();
 	SetCPUDepending<LightingComponent>();
 	SetGPUDepending<CSMComponent>();
 	RenderTextureFormat volumeFormat;
@@ -173,3 +174,4 @@ void VolumetricComponent::RenderEvent(EventData& data, ThreadCommand* commandLis
 			data.ringFrameIndex
 		});
 }
+#undef _VolumeTex

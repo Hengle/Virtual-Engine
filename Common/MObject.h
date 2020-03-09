@@ -55,11 +55,11 @@ struct LinkHeap
 	static void ReturnHeap(LinkHeap* value) noexcept;
 };
 
-class CrateApp;
+class VEngine;
 class PtrWeakLink;
 class PtrLink
 {
-	friend class CrateApp;
+	friend class VEngine;
 	friend class PtrWeakLink;
 	static bool globalEnabled;
 public:
@@ -81,6 +81,7 @@ public:
 		}
 		heapPtr = p.heapPtr;
 	}
+	inline PtrLink(const PtrWeakLink& link) noexcept;
 	void operator=(const PtrLink& p) noexcept
 	{
 		if (p.heapPtr) {
@@ -130,7 +131,7 @@ public:
 		Dispose();
 		heapPtr = p.heapPtr;
 	}
-
+	void Destroy() noexcept;
 	void operator=(const PtrWeakLink& p) noexcept
 	{
 		if (p.heapPtr) {
@@ -144,6 +145,7 @@ public:
 		Dispose();
 	}
 };
+
 
 template <typename T>
 class ObjWeakPtr;
@@ -173,6 +175,7 @@ public:
 	{
 
 	}
+	inline constexpr ObjectPtr(const ObjWeakPtr<T>& ptr) noexcept;
 	static ObjectPtr<T> MakePtr(T* ptr) noexcept
 	{
 		return ObjectPtr<T>(ptr);
@@ -236,6 +239,7 @@ template <typename T>
 class ObjWeakPtr
 {
 private:
+	friend class ObjectPtr<T>;
 	PtrWeakLink link;
 public:
 	inline constexpr ObjWeakPtr() noexcept :
@@ -263,6 +267,11 @@ public:
 	inline constexpr operator T* () const noexcept
 	{
 		return (T*)link.heapPtr->ptr;
+	}
+
+	inline constexpr void Destroy() noexcept
+	{
+		link.Destroy();
 	}
 
 	template<typename F>
@@ -307,3 +316,18 @@ public:
 		return link.heapPtr != ptr.link.heapPtr;
 	}
 };
+template<typename T>
+inline constexpr ObjectPtr<T>::ObjectPtr(const ObjWeakPtr<T>& ptr) noexcept :
+	link(ptr.link)
+{
+
+}
+
+inline PtrLink::PtrLink(const PtrWeakLink& p) noexcept
+{
+	if (p.heapPtr) {
+		p.heapPtr->refCount.fetch_add(1, std::memory_order_relaxed);
+		p.heapPtr->looseRefCount.fetch_add(1, std::memory_order_relaxed);
+	}
+	heapPtr = p.heapPtr;
+}

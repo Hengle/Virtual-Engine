@@ -1,5 +1,5 @@
 //***************************************************************************************
-// CrateApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
+// VEngine.cpp by Frank Luna (C) 2015 All Rights Reserved.
 //***************************************************************************************
 #include "RenderComponent/Shader.h"
 #include "Common/d3dApp.h"
@@ -35,17 +35,17 @@ using namespace DirectX::PackedVector;
 const int gNumFrameResources = 3;
 
 #include "LogicComponent/World.h"
-class CrateApp : public D3DApp
+class VEngine : public D3DApp
 {
 public:
 	std::vector<JobBucket*> buckets[2];
 	StackObject<CameraMove> camMove;
 	bool bucketsFlag = false;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> mComputeCommandQueue;
-	CrateApp(HINSTANCE hInstance);
-	CrateApp(const CrateApp& rhs) = delete;
-	CrateApp& operator=(const CrateApp& rhs) = delete;
-	~CrateApp();
+	VEngine(HINSTANCE hInstance);
+	VEngine(const VEngine& rhs) = delete;
+	VEngine& operator=(const VEngine& rhs) = delete;
+	~VEngine();
 	void InitRenderer();
 	void DisposeRenderer();
 
@@ -73,7 +73,7 @@ public:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	PSTR cmdLine, int showCmd)
 {
-	StackObject<CrateApp> theApp;
+	StackObject<VEngine> theApp;
 	// Enable run-time memory check for debug builds.
 #if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -111,18 +111,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	theApp.Delete();
 }
 
-void CrateApp::OnPressMinimizeKey(bool minimize)
+void VEngine::OnPressMinimizeKey(bool minimize)
 {
 
 }
 
-CrateApp::CrateApp(HINSTANCE hInstance)
+VEngine::VEngine(HINSTANCE hInstance)
 	: D3DApp(hInstance)
 {
 
 }
 
-void CrateApp::InitRenderer()
+void VEngine::InitRenderer()
 {
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -151,7 +151,7 @@ void CrateApp::InitRenderer()
 	FlushCommandQueue();
 	directThreadCommand.Delete();
 }
-void CrateApp::DisposeRenderer()
+void VEngine::DisposeRenderer()
 {
 	FrameResource::mFrameResources.clear();
 	mainCamera.Destroy();
@@ -159,7 +159,7 @@ void CrateApp::DisposeRenderer()
 	ShaderCompiler::Dispose();
 }
 
-CrateApp::~CrateApp()
+VEngine::~VEngine()
 {
 	mSwapChain->SetFullscreenState(false, nullptr);
 	pipelineJobSys->Wait();
@@ -175,7 +175,7 @@ CrateApp::~CrateApp()
 	mComputeCommandQueue = nullptr;
 
 }
-bool CrateApp::Initialize()
+bool VEngine::Initialize()
 {
 	PtrLink::globalEnabled = true;
 	if (!D3DApp::Initialize())
@@ -185,13 +185,13 @@ bool CrateApp::Initialize()
 	buckets[0].reserve(20);
 	buckets[1].reserve(20);
 	UINT cpuCoreCount = std::thread::hardware_concurrency() - 2;	//One for main thread & one for loading
-	pipelineJobSys.New(max<uint>(1, cpuCoreCount));
+	pipelineJobSys.New(Max<uint>(1, cpuCoreCount));
 	AssetDatabase::CreateInstance();
 	InitRenderer();
 	return true;
 }
 
-void CrateApp::OnResize()
+void VEngine::OnResize()
 {
 	for (uint i = 0; i < FrameResource::mFrameResources.size(); ++i)
 	{
@@ -202,7 +202,7 @@ void CrateApp::OnResize()
 }
 
 std::vector<Camera*> cam(1);
-bool CrateApp::Draw(const GameTimer& gt)
+bool VEngine::Draw(const GameTimer& gt)
 {
 	if (mClientHeight < 1 || mClientWidth < 1) return true;
 	mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
@@ -288,7 +288,7 @@ bool CrateApp::Draw(const GameTimer& gt)
 	return true;
 }
 
-void CrateApp::UpdateCamera(const GameTimer& gt)
+void VEngine::UpdateCamera(const GameTimer& gt)
 {
 	mRadius = 1;
 	// Convert Spherical to Cartesian coordinates.
@@ -302,7 +302,7 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 
 }
 
-void CrateApp::BuildFrameResources()
+void VEngine::BuildFrameResources()
 {
 	FrameResource::mFrameResources.resize(gNumFrameResources);
 	for (int i = 0; i < gNumFrameResources; ++i)

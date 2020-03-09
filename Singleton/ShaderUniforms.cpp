@@ -1,7 +1,6 @@
 #include "ShaderUniforms.h"
 #include <fstream>
 #include "../Common/StringUtility.h"
-using namespace std;
 using namespace StringUtil;
 namespace SCompile
 {
@@ -79,9 +78,9 @@ namespace SCompile
 		return desc;
 	}
 
-	void GetVarData(const string& s, bool useCount, char registerType, uint& count, uint& regis, uint& space, string& name)
+	void GetVarData(const std::string& s, bool useCount, char registerType, uint& count, uint& regis, uint& space, std::string& name)
 	{
-		string data;
+		std::string data;
 		space = 0;
 		regis = 0;
 		count = 1;
@@ -93,7 +92,7 @@ namespace SCompile
 		}
 		GetDataFromBrackets(s, data);
 		int tIndices = GetFirstIndexOf(data, registerType);
-		string regisStr;
+		std::string regisStr;
 		regisStr.reserve(3);
 		if (tIndices >= 0)
 		{
@@ -129,31 +128,31 @@ namespace SCompile
 		}
 	}
 
-	void GetShaderRootSigData(const string& path, vector<ShaderVariable>& vars, vector<PassDescriptor>& passes)
+	void GetShaderRootSigData(const std::string& path, std::vector<ShaderVariable>& vars, std::vector<PassDescriptor>& passes)
 	{
 		vars.clear();
 		vars.reserve(20);
 		passes.clear();
 		passes.reserve(20);
-		ifstream ifs(path);
+		std::ifstream ifs(path);
 		if (!ifs) return;
 		char c[256];
-		string s;
-		static string rwtex = "RWT";
-		static string rwstr = "RWS";
-		static string cbuffer = "cbuffer";
-		static string tex = "Tex";
-		static string str = "Str";
-		static string pragma = "#pragma";
-		static string endPragma = "#end";
-		static string vertex = "vertex";
-		static string fragment = "fragment";
-		static string Cull = "cull";
-		static string zWrite = "zwrite";
-		static string zTest = "ztest";
-		static string conservative = "conservative";
-		static string blend = "blend";
-		std::vector<string> commands;
+		std::string s;
+		static std::string rwtex = "RWT";
+		static std::string rwstr = "RWS";
+		static std::string cbuffer = "cbuffer";
+		static std::string tex = "Tex";
+		static std::string str = "Str";
+		static std::string pragma = "#pragma";
+		static std::string endPragma = "#end";
+		static std::string vertex = "vertex";
+		static std::string fragment = "fragment";
+		static std::string Cull = "cull";
+		static std::string zWrite = "zwrite";
+		static std::string zTest = "ztest";
+		static std::string conservative = "conservative";
+		static std::string blend = "blend";
+		std::vector<std::string> commands;
 		s.reserve(256);
 
 
@@ -313,24 +312,24 @@ namespace SCompile
 		}
 
 	}
-	void GetComputeShaderRootSigData(const string& path, vector<ComputeShaderVariable>& vars, vector<string>& passes)
+	void GetComputeShaderRootSigData(const std::string& path, std::vector<ComputeShaderVariable>& vars, std::vector<std::string>& passes)
 	{
 		vars.clear();
 		vars.reserve(20);
 		passes.clear();
 		passes.reserve(20);
-		ifstream ifs(path);
+		std::ifstream ifs(path);
 		if (!ifs) return;
 		char c[256];
-		string s;
-		static string rwtex = "RWT";
-		static string rwstr = "RWS";
-		static string cbuffer = "cbuffer";
-		static string tex = "Tex";
-		static string str = "Str";
-		static string pragma = "#pragma";
-		string kernelName;
-		//string endpragma = "#end";
+		std::string s;
+		static std::string rwtex = "RWT";
+		static std::string rwstr = "RWS";
+		static std::string cbuffer = "cbuffer";
+		static std::string tex = "Tex";
+		static std::string str = "Str";
+		static std::string pragma = "#pragma";
+		std::string kernelName;
+		//std::string endpragma = "#end";
 		s.reserve(256);
 
 

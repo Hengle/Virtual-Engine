@@ -70,7 +70,7 @@ public:
 	{
 		if (targetCapacity <= capacity) return;
 		UINT autoCapac = (UINT)(capacity * 1.5);
-		targetCapacity = max(targetCapacity, autoCapac);
+		targetCapacity = Max<UINT>(targetCapacity, autoCapac);
 		UploadBuffer* newObjBuffer = new UploadBuffer(device, targetCapacity, false, sizeof(ObjectData));
 		UploadBuffer* newCmdDrawBuffer = new UploadBuffer(device, targetCapacity, false, sizeof(MultiDrawCommand));
 		newObjBuffer->CopyFrom(objectPosBuffer.get(), 0, 0, capacity);
