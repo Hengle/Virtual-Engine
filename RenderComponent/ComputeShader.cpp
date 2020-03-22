@@ -222,7 +222,7 @@ ComputeShader::ComputeShader(
 	{
 		for (UINT i = 0; i < kernelSize; ++i)
 		{
-			compileJob->GetTask<ComputeShaderCompiler>(
+			compileJob->GetTask<ComputeShaderCompiler>(nullptr, 0,
 				{
 					this,
 					kernelSize,
@@ -230,7 +230,7 @@ ComputeShader::ComputeShader(
 					device,
 					compilePath,
 					i
-				}, nullptr, 0);
+				});
 		}
 	}
 	else

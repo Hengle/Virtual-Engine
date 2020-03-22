@@ -3,6 +3,7 @@
 #include "../Common/d3dApp.h"
 AssetDatabase* AssetDatabase::current(nullptr);
 using namespace neb;
+ID3D12Device* AssetDatabase::device = nullptr;
 namespace LoadingThreadFlags
 {
 	bool threadEnabled = true;
@@ -36,7 +37,7 @@ void AssetDatabase::LoadingThreadMainLogic()
 			if (ref.IsLoad())
 			{
 				ref.Load(
-					D3DApp::md3dDevice.Get(),
+					device,
 					current->mainThreadRunnable);
 			}
 			else
@@ -81,8 +82,9 @@ void AssetDatabase::MainThreadUpdate()
 	mainThreadRunnable.clear();
 }
 
-AssetDatabase::AssetDatabase()
+AssetDatabase::AssetDatabase(ID3D12Device* device)
 {
+	this->device = device;
 	current = this;
 	mainThreadRunnable.reserve(20);
 	loadList.reserve(20);

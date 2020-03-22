@@ -81,7 +81,7 @@ void Light::GetLightingList(
 				Cone spotCone(ite->transform->GetPosition(), ite->range, ite->transform->GetForward(), ite->angle);
 				auto func = [&](UINT i)->bool
 				{
-					return MathLib::ConeIntersect(std::move(spotCone), std::move(frustumPlanes[i]));
+					return MathLib::ConeIntersect(spotCone, frustumPlanes[i]);
 				};
 				if (InnerLoopEarlyBreak<decltype(func), 6>(func))
 				{
@@ -93,7 +93,7 @@ void Light::GetLightingList(
 			{
 				auto func = [&](UINT i)->bool
 				{
-					return MathLib::GetDistanceToPlane(std::move(frustumPlanes[i]), std::move(position)) < ite->range;
+					return MathLib::GetDistanceToPlane((frustumPlanes[i]), (position)) < ite->range;
 				};
 				if (InnerLoopEarlyBreak<decltype(func), 6>(func))
 				{

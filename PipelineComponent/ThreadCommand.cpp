@@ -11,7 +11,7 @@ void ThreadCommand::ResetCommand()
 void ThreadCommand::CloseCommand()
 {
 
-	for (auto ite = rtStateMap.begin(); ite != rtStateMap.end(); ++ite)
+	/*for (auto ite = rtStateMap.begin(); ite != rtStateMap.end(); ++ite)
 	{
 		if (ite->second)
 		{
@@ -27,7 +27,7 @@ void ThreadCommand::CloseCommand()
 		{
 			buffer.AddCommand(D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ite->first->GetResource());
 		}
-	}
+	}*/
 	buffer.ExecuteCommand(GetCmdList());
 	rtStateMap.clear();
 	sbufferStateMap.clear();
@@ -113,11 +113,11 @@ void ThreadCommand::SetResourceReadWriteState(RenderTexture* rt, ResourceReadWri
 	readState = rt->GetReadState();
 	if (state)
 	{
-		Graphics::ResourceStateTransform(cmdList.Get(), writeState, readState, rt->GetResource());
+		buffer.AddCommand(writeState, readState, rt->GetResource());
 	}
 	else
 	{
-		Graphics::ResourceStateTransform(cmdList.Get(), readState, writeState, rt->GetResource());
+		buffer.AddCommand( readState, writeState, rt->GetResource());
 	}
 }
 
@@ -126,10 +126,10 @@ void ThreadCommand::SetResourceReadWriteState(StructuredBuffer* rt, ResourceRead
 	if (!UpdateState(rt, state)) return;
 	if (state)
 	{
-		Graphics::ResourceStateTransform(cmdList.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ, rt->GetResource());
+		buffer.AddCommand(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_GENERIC_READ, rt->GetResource());
 	}
 	else
 	{
-		Graphics::ResourceStateTransform(cmdList.Get(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, rt->GetResource());
+		buffer.AddCommand(D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, rt->GetResource());
 	}
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include <type_traits>
 #include <unordered_map>
 typedef unsigned int UINT;
 template <typename T, UINT size>
@@ -19,13 +20,28 @@ public:
 	template <typename... Args>
 	constexpr void New(Args&&... args) noexcept
 	{
-		T* ptr = (T*)&storage;
-		new (ptr)T(args...);
+		new (&storage)T(std::forward<Args>(args)...);
+	}
+	template <typename... Args>
+	constexpr void InPlaceNew(Args&&... args) noexcept
+	{
+		new (&storage)T{ std::forward<Args>(args)... };
+	}
+	constexpr void operator=(const StackObject<T>& value)
+	{
+		*(T*)&storage = *value();
+	}
+	constexpr void operator=(StackObject<T>&& value)
+	{
+		*(T*)&storage = std::move(*value);
 	}
 	constexpr void Delete() noexcept
 	{
-		T* ptr = (T*)&storage;
-		ptr->~T();
+		((T*)&storage)->~T();
+	}
+	constexpr T& operator*() const noexcept
+	{
+		return *(T*)&storage;
 	}
 	constexpr T* operator->() const noexcept
 	{
@@ -42,47 +58,6 @@ public:
 	bool operator==(const StackObject<T>&) const = delete;
 	bool operator!=(const StackObject<T>&) const = delete;
 	StackObject() {}
-	constexpr StackObject(const StackObject<T>& obj) noexcept
-	{
-		memcpy(&storage, &obj, sizeof(Storage<T, 1>));
-	}
-	constexpr StackObject<T>& operator=(const StackObject<T>& obj) noexcept
-	{
-		memcpy(&storage, &obj, sizeof(Storage<T, 1>));
-		return *this;
-	}
-};
-
-template <typename... Args>
-class AlignedTuple;
-template<>
-class AlignedTuple<>
-{
-public:
-	AlignedTuple(size_t* ptr, int count) {}
-	AlignedTuple(size_t* ptr) {}
-};
-template <typename T, typename... Args>
-class AlignedTuple<T, Args...> : public AlignedTuple<Args...>
-{
-public:
-	Storage<T, 1> value;
-	AlignedTuple(size_t* ptr, int count) :
-		AlignedTuple<Args...>(ptr, count - 1)
-	{
-		count -= 1;
-		if (count < 0) return;
-		AlignedTuple<T, Args...>* classPtr = nullptr;
-		ptr[count] = (size_t)&classPtr->value;
-	}
-	AlignedTuple(size_t* ptr) :
-		AlignedTuple<Args...>(ptr, sizeof...(Args))
-	{
-		int count = sizeof...(Args);
-		if (count < 0) return;
-		AlignedTuple<T, Args...>* classPtr = nullptr;
-		ptr[count] = (size_t)&classPtr->value;
-	}
 };
 
 template <typename F, unsigned int count>

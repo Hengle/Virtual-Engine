@@ -1,7 +1,7 @@
-Texture2D<float4> _MainTex[6] : register(t0, space0);
-Texture2D<float> _GreyTex[6] : register(t0, space1);
-Texture2D<uint> _IntegerTex[6] : register(t0, space2);
-TextureCube<float4> _Cubemap[6] : register(t0, space3);
+Texture2D<float4> _MainTex[100] : register(t0, space0);
+Texture2D<float> _GreyTex[100] : register(t0, space1);
+Texture2D<uint> _IntegerTex[100] : register(t0, space2);
+TextureCube<float4> _Cubemap[100] : register(t0, space3);
 cbuffer Per_Object_Buffer : register(b0)
 cbuffer Per_Camera_Buffer : register(b1)
 cbuffer LightCullCBuffer : register(b2)

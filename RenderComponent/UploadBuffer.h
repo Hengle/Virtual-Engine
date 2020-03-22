@@ -72,6 +72,15 @@ public:
 		return mElementCount;
 	}
 	void ReleaseAfterFlush(FrameResource* res);
+	UploadBuffer(const UploadBuffer& another) :
+		mUploadBuffer(another.mUploadBuffer),
+		mMappedData(another.mMappedData),
+		mStride(another.mStride),
+		mElementCount(another.mElementCount),
+		mElementByteSize(another.mElementByteSize),
+		mIsConstantBuffer(another.mIsConstantBuffer)
+	{
+	}
 private:
 	struct UploadCommand
 	{
@@ -84,4 +93,5 @@ private:
 	UINT mElementCount;
     UINT mElementByteSize;
     bool mIsConstantBuffer;
+
 };

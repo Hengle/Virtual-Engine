@@ -1,4 +1,5 @@
 #pragma once
+#include <type_traits>
 #include <vector>
 #include <atomic>
 #include <mutex>
@@ -30,13 +31,13 @@ public:
 	}
 
 	template <typename... Args>
-	constexpr T* New(Args... args)
+	constexpr T* New(Args&&... args)
 	{
 		if (allPtrs.size() <= 0)
 			AllocateMemory();
 		T* value = allPtrs[allPtrs.size() - 1];
 		allPtrs.erase(allPtrs.end() - 1);
-		new (value)T(args...);
+		new (value)T(std::forward<Args>(args)...);
 		return value;
 	}
 
@@ -98,7 +99,7 @@ public:
 		arr->objs[currentCount] = (StorageT*)targetPtr;
 	}
 	template <typename ... Args>
-	constexpr T* New(Args... args)
+	constexpr T* New(Args&&... args)
 	{
 		Array* arr = unusedObjects + objectSwitcher;
 		int64_t currentCount = --arr->count;
@@ -112,7 +113,7 @@ public:
 		{
 			t = (T*)malloc(sizeof(StorageT));
 		}
-		new (t)T(args...);
+		new (t)T(std::forward<Args>(args)...);
 		return t;
 	}
 

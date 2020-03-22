@@ -3,8 +3,6 @@ TextureCube _MainTex : register(t0, space0);
 cbuffer SkyboxBuffer : register(b0)
 {
     float4x4 invVP;
-    float deltaTime;
-    float time;
 };
 
 

@@ -1,7 +1,8 @@
 #pragma once
 #include "../Common/d3dUtil.h"
 #include "../Common/MObject.h"
-class UploadBuffer;
+#include "../Common/MetaLib.h"
+#include "UploadBuffer.h"
 struct ConstBufferElement
 {
 	UploadBuffer* buffer;
@@ -10,7 +11,16 @@ struct ConstBufferElement
 class CBufferPool
 {
 private:
-	std::vector<UploadBuffer*> arr;
+	struct UploadBufferChunk
+	{
+		StackObject<UploadBuffer> buffer;
+		bool isInitialized = false;
+		UploadBufferChunk() {}
+		UploadBufferChunk(const UploadBufferChunk&);
+		~UploadBufferChunk();
+		void operator=(const UploadBufferChunk&);
+	};
+	std::vector<UploadBufferChunk> arr;
 	std::vector<ConstBufferElement> poolValue;
 	UINT capacity;
 	UINT stride;

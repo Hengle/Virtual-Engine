@@ -10,7 +10,7 @@
 #include "../Singleton/ShaderID.h"
 #include "../Singleton/PSOContainer.h"
 #include <mutex>
-#include "../PipelineComponent/IPerCameraResource.h"
+#include "../PipelineComponent/IPipelineResource.h"
 #include "RenderTexture.h"
 #include "../Singleton/Graphics.h"
 #include "../LogicComponent/World.h"

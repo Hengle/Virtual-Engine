@@ -31,6 +31,7 @@ private:
 	std::condition_variable mainThreadWaitCV;
 	bool mainThreadFinished;
 	bool JobSystemInitialized = true;
+	bool jobSystemStart = false;
 public:
 	JobSystem(int threadCount) noexcept;
 	void ExecuteBucket(JobBucket** bucket, int bucketCount);

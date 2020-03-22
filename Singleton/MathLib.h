@@ -9,7 +9,7 @@ struct Cone
 	float height;
 	DirectX::XMFLOAT3 direction;
 	float radius;
-	Cone(DirectX::XMFLOAT3&& position, float distance, DirectX::XMFLOAT3&& direction, float angle) : 
+	Cone(DirectX::XMFLOAT3& position, float distance, DirectX::XMFLOAT3& direction, float angle) : 
 		vertex(position),
 		height(distance),
 		direction(direction)
@@ -32,10 +32,10 @@ public:
 	static bool BoxIntersect(
 		const Math::Matrix4& localToWorldMatrix,
 		Math::Vector4* planes,
-		Math::Vector3&& position,
-		Math::Vector4&& localExtent);
+		const Math::Vector3& position,
+		const Math::Vector4& localExtent);
 	static void GetCameraNearPlanePoints(
-		Math::Matrix4&& localToWorldMatrix,
+		const Math::Matrix4& localToWorldMatrix,
 		double fov,
 		double aspect,
 		double distance,
@@ -43,15 +43,23 @@ public:
 	);
 
 	static void GetPerspFrustumPlanes(
-		Math::Matrix4&& localToWorldMatrix,
+		const Math::Matrix4& localToWorldMatrix,
 		double fov,
 		double aspect,
 		double nearPlane,
 		double farPlane,
 		DirectX::XMFLOAT4* frustumPlanes
 	);
+	static void GetPerspFrustumPlanes(
+		const Math::Matrix4& localToWorldMatrix,
+		double fov,
+		double aspect,
+		double nearPlane,
+		double farPlane,
+		Math::Vector4* frustumPlanes
+	);
 	static void GetFrustumBoundingBox(
-		Math::Matrix4&& localToWorldMatrix,
+		const Math::Matrix4& localToWorldMatrix,
 		double nearWindowHeight,
 		double farWindowHeight,
 		double aspect,
@@ -62,13 +70,13 @@ public:
 	);
 
 	static float GetDistanceToPlane(
-		Math::Vector4&& plane,
-		Math::Vector4&& point)
+		const Math::Vector4& plane,
+		const Math::Vector4& point)
 	{
 		Math::Vector3 dotValue = DirectX::XMVector3Dot(plane, point);
 		return ((DirectX::XMFLOAT4*)&dotValue)->x + ((DirectX::XMFLOAT4*)&point)->w;
 	}
-	static bool ConeIntersect(Cone&& cone, Math::Vector4&& plane);
+	static bool ConeIntersect(const Cone& cone, const Math::Vector4& plane);
 	static void GetOrthoCamFrustumPlanes(
 		const Math::Vector3& right,
 		const Math::Vector3& up,
@@ -89,4 +97,9 @@ public:
 		float nearPlane,
 		float farPlane,
 		Math::Vector3* results);
+
+	static double DistanceToCube(const Math::Vector3& size, const Math::Vector3& quadToTarget);
+	static double DistanceToQuad(double size, float2 quadToTarget);
+	static bool BoxIntersect(const Math::Vector3& position, const Math::Vector3& extent, Math::Vector4* planes, int len);
+	static bool BoxContactWithBox(double3 min0, double3 max0, double3 min1, double3 max1);
 };

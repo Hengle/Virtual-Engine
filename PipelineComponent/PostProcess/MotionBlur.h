@@ -175,11 +175,11 @@ public:
 		cbData._MainTex_TexelSize = mainTexSize;
 		MotionBlurCameraData* camData = (MotionBlurCameraData*)cam->GetResource(this, [&]()->MotionBlurCameraData* {
 			return new MotionBlurCameraData(device);
-		});
+			});
 		camData->constParams.CopyData(0 + MotionBlurCameraData::CONST_PARAM_SIZE * frameIndex, &cbData);
 		uint currentWidth = width;
 		uint currentHeight = height;
-		
+
 		camData->constParams.CopyData(1 + MotionBlurCameraData::CONST_PARAM_SIZE * frameIndex, &cbData);
 		currentWidth /= 2;
 		currentHeight /= 2;
@@ -220,7 +220,7 @@ public:
 		motionBlurShader->SetResource(commandList, Params, &camData->constParams, 0 + MotionBlurCameraData::CONST_PARAM_SIZE * frameIndex);
 		Graphics::Blit(
 			commandList, device,
-			&tempRT[vbuffer]->GetColorDescriptor(0),
+			&tempRT[vbuffer]->GetColorDescriptor(0, 0),
 			1, nullptr,
 			container, 0,
 			tempRT[vbuffer]->GetWidth(),
@@ -231,7 +231,7 @@ public:
 		tCmd->SetResourceReadWriteState(tempRT[vbuffer], ResourceReadWriteState::Read);
 		Graphics::Blit(
 			commandList, device,
-			&tempRT[tile2]->GetColorDescriptor(0),
+			&tempRT[tile2]->GetColorDescriptor(0, 0),
 			1, nullptr,
 			container, 1,
 			tempRT[tile2]->GetWidth(),
@@ -242,7 +242,7 @@ public:
 		tCmd->SetResourceReadWriteState(tempRT[tile2], ResourceReadWriteState::Read);
 		Graphics::Blit(
 			commandList, device,
-			&tempRT[tile4]->GetColorDescriptor(0),
+			&tempRT[tile4]->GetColorDescriptor(0, 0),
 			1, nullptr,
 			container, 1,
 			tempRT[tile4]->GetWidth(),
@@ -253,7 +253,7 @@ public:
 		tCmd->SetResourceReadWriteState(tempRT[tile4], ResourceReadWriteState::Read);
 		Graphics::Blit(
 			commandList, device,
-			&tempRT[tile8]->GetColorDescriptor(0),
+			&tempRT[tile8]->GetColorDescriptor(0, 0),
 			1, nullptr,
 			container, 1,
 			tempRT[tile8]->GetWidth(),
@@ -264,7 +264,7 @@ public:
 		tCmd->SetResourceReadWriteState(tempRT[tile8], ResourceReadWriteState::Read);
 		Graphics::Blit(
 			commandList, device,
-			&tempRT[tile]->GetColorDescriptor(0),
+			&tempRT[tile]->GetColorDescriptor(0, 0),
 			1, nullptr,
 			container, 1,
 			tempRT[tile]->GetWidth(),
@@ -275,7 +275,7 @@ public:
 		tCmd->SetResourceReadWriteState(tempRT[tile], ResourceReadWriteState::Read);
 		Graphics::Blit(
 			commandList, device,
-			&tempRT[neighborMax]->GetColorDescriptor(0),
+			&tempRT[neighborMax]->GetColorDescriptor(0, 0),
 			1, nullptr,
 			container, 1,
 			tempRT[neighborMax]->GetWidth(),
@@ -286,7 +286,7 @@ public:
 		tCmd->SetResourceReadWriteState(tempRT[neighborMax], ResourceReadWriteState::Read);
 		Graphics::Blit(
 			commandList, device,
-			&dest->GetColorDescriptor(0),
+			&dest->GetColorDescriptor(0, 0),
 			1, nullptr,
 			container, 2,
 			dest->GetWidth(),

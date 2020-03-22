@@ -37,6 +37,7 @@ public:
 		commandList->SetDescriptorHeaps(1, &heap);
 	}
 	constexpr D3D12_DESCRIPTOR_HEAP_DESC GetDesc() const { return Desc; };
+	constexpr uint Size() const { return Desc.NumDescriptors; }
 private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> pDH;
 	D3D12_DESCRIPTOR_HEAP_DESC Desc;

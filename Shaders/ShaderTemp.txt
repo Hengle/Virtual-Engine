@@ -1,0 +1,2 @@
+shader TerrainMainShader.hlsl TerrainMainShader.prop
+compute VirtualTextureSetter.compute VirtualTextureSetter.prop

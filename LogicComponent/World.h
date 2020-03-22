@@ -6,18 +6,26 @@
 #include "../Common/RandomVector.h"
 #include <mutex>
 class PBRMaterialManager;
+
 class FrameResource;
+class GameTimer;
 class Transform;
 class DescriptorHeap;
 class Mesh;
 class GRPRenderManager;
+class MeshRenderer;
+class JobBucket;
+class Texture;
+class VirtualTexture;
+class TerrainDrawer;
+class Camera;
 
 //Only For Test!
 class World final
 {
 	friend class Transform;
 private:
-	static const UINT MAXIMUM_HEAP_COUNT = 10000;
+	static const UINT MAXIMUM_HEAP_COUNT = 50000;
 	ObjectPtr<DescriptorHeap> globalDescriptorHeap;
 	BitArray usedDescs;
 	std::vector<UINT> unusedDescs;
@@ -27,7 +35,12 @@ private:
 	GRPRenderManager* grpRenderer;
 	PBRMaterialManager* grpMaterialManager;
 	RandomVector<ObjectPtr<Transform>> allTransformsPtr;
+	std::vector<ObjectPtr<Camera>> allCameras;
 public:
+	//ObjectPtr<MeshRenderer> testMeshRenderer;
+	std::wstring windowInfo;
+	ObjectPtr<VirtualTexture> virtualTexture;
+	ObjectPtr<TerrainDrawer> terrainDrawer;
 	GRPRenderManager* GetGRPRenderManager() const
 	{
 		return grpRenderer;
@@ -36,7 +49,10 @@ public:
 	{
 		return grpMaterialManager;
 	}
-	void Rebuild(ID3D12GraphicsCommandList* cmdList, ID3D12Device* device);
+	std::vector<ObjectPtr<Camera>>& GetCameras()
+	{
+		return allCameras;
+	}
 	~World();
 	UINT windowWidth;
 	UINT windowHeight;
@@ -54,9 +70,12 @@ public:
 		current = nullptr;
 		if (a) delete a;
 	}
-	void Update(FrameResource* resource, ID3D12Device* device);
+	void Update(FrameResource* resource, ID3D12Device* device, GameTimer& timer, int2 screenSize);
+	void PrepareUpdateJob(JobBucket* bucket, FrameResource* resource, ID3D12Device* device, GameTimer& timer, int2 screenSize);
 	inline constexpr DescriptorHeap* GetGlobalDescHeap() const
-	{ return globalDescriptorHeap.operator->(); }
+	{
+		return globalDescriptorHeap.operator->();
+	}
 	UINT GetDescHeapIndexFromPool();
 	void ReturnDescHeapIndexToPool(UINT targetIndex);
 	void ForceCollectAllHeapIndex();

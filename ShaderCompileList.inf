@@ -5,8 +5,11 @@ shader OpaqueStandard Shaders/CompileResult/Default.hlsl.cso
 shader Skybox Shaders/CompileResult/Skybox.hlsl.cso
 shader TemporalAA Shaders/CompileResult/TemporalAA.hlsl.cso
 shader PreInt Shaders/CompileResult/PreintBaker.hlsl.cso
+shader Terrain Shaders/CompileResult/TerrainMainShader.hlsl.cso
+shader TerrainProject Shaders/CompileResult/TerrainProjector.hlsl.cso
 compute Cull Shaders/CompileResult/Cull.compute.cso
 compute LightCull Shaders/CompileResult/LightCull.compute.cso
 compute SSR Shaders/CompileResult/ScreenSpaceReflection.compute.cso
 compute Froxel Shaders/CompileResult/Froxel.compute.cso
 compute ExposureHistogram Shaders/CompileResult/ExposureHistorgram.compute.cso
+compute VirtualTextureSetter Shaders/CompileResult/VirtualTextureSetter.compute.cso

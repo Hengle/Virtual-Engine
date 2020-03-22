@@ -5,6 +5,7 @@ unsigned int ShaderID::mPerCameraBuffer = 0;
 unsigned int ShaderID::mPerMaterialBuffer = 0;
 unsigned int ShaderID::mPerObjectBuffer = 0;
 unsigned int ShaderID::mainTex = 0;
+unsigned int ShaderID::params = 0;
 std::mutex ShaderID::mtx;
 unsigned int ShaderID::PropertyToID(std::string str)
 {
@@ -33,4 +34,5 @@ void ShaderID::Init()
 	mPerMaterialBuffer = PropertyToID("Per_Material_Buffer");
 	mPerObjectBuffer = PropertyToID("Per_Object_Buffer");
 	mainTex = PropertyToID("_MainTex");
+	params = PropertyToID("Params");
 }

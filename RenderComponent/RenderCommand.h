@@ -2,6 +2,7 @@
 #include "../Common/d3dUtil.h"
 #include <mutex>
 #include "../Common/RingQueue.h"
+class TransitionBarrierBuffer;
 class FrameResource;
 class RenderCommand
 {
@@ -13,10 +14,12 @@ public:
 	virtual void operator()(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* commandList,
-		FrameResource* resource) = 0;
+		FrameResource* resource,
+		TransitionBarrierBuffer*) = 0;
 	static void AddCommand(RenderCommand* command);
 	static bool ExecuteCommand(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* commandList,
-		FrameResource* resource);
+		FrameResource* resource,
+		TransitionBarrierBuffer*);
 };

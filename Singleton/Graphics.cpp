@@ -65,7 +65,7 @@ void Graphics::CopyBufferToBC5Texture(
 	ID3D12GraphicsCommandList* commandList,
 	UploadBuffer* sourceBuffer, size_t sourceBufferOffset,
 	ID3D12Resource* textureResource, UINT targetMip,
-	UINT width, UINT height, UINT depth, DXGI_FORMAT targetFormat, UINT pixelSize)
+	UINT width, UINT height, UINT depth, DXGI_FORMAT targetFormat, UINT pixelSize, TransitionBarrierBuffer* barrierBuffer)
 {
 	D3D12_TEXTURE_COPY_LOCATION sourceLocation;
 	sourceLocation.pResource = sourceBuffer->Resource();
@@ -83,21 +83,22 @@ void Graphics::CopyBufferToBC5Texture(
 	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 	destLocation.SubresourceIndex = targetMip;
 	destLocation.pResource = textureResource;
-	ResourceStateTransform(commandList, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, textureResource);
+	barrierBuffer->AddCommand(D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, textureResource);
+	barrierBuffer->ExecuteCommand(commandList);
 	commandList->CopyTextureRegion(
 		&destLocation,
 		0, 0, 0,
 		&sourceLocation,
 		nullptr
 	);
-	ResourceStateTransform(commandList, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, textureResource);
+	barrierBuffer->AddCommand(D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, textureResource);
 }
 
 void Graphics::CopyBufferToTexture(
 	ID3D12GraphicsCommandList* commandList,
 	UploadBuffer* sourceBuffer, size_t sourceBufferOffset,
 	ID3D12Resource* textureResource, UINT targetMip,
-	UINT width, UINT height, UINT depth, DXGI_FORMAT targetFormat, UINT pixelSize)
+	UINT width, UINT height, UINT depth, DXGI_FORMAT targetFormat, UINT pixelSize, TransitionBarrierBuffer* barrierBuffer)
 {
 	D3D12_TEXTURE_COPY_LOCATION sourceLocation;
 	sourceLocation.pResource = sourceBuffer->Resource();
@@ -115,14 +116,15 @@ void Graphics::CopyBufferToTexture(
 	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 	destLocation.SubresourceIndex = targetMip;
 	destLocation.pResource = textureResource;
-	ResourceStateTransform(commandList, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, textureResource);
+	barrierBuffer->AddCommand(D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, textureResource);
+	barrierBuffer->ExecuteCommand(commandList);
 	commandList->CopyTextureRegion(
 		&destLocation,
 		0, 0, 0,
 		&sourceLocation,
 		nullptr
 	);
-	ResourceStateTransform(commandList, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, textureResource);
+	barrierBuffer->AddCommand(D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, textureResource);
 }
 
 void Graphics::Blit(

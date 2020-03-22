@@ -6,6 +6,10 @@ struct StructuredBufferElement
 {
 	size_t stride;
 	size_t elementCount;
+	static constexpr StructuredBufferElement Get(size_t stride, size_t elementCount)
+	{
+		return { stride, elementCount };
+	}
 };
 
 enum StructuredBufferState
@@ -26,7 +30,8 @@ public:
 		ID3D12Device* device,
 		StructuredBufferElement* elementsArray,
 		UINT elementsCount,
-		bool isIndirect = false
+		bool isIndirect = false,
+		bool isReadable = false
 	);
 	size_t GetStride(UINT index) const;
 	size_t GetElementCount(UINT index) const;

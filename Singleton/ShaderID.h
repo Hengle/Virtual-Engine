@@ -10,6 +10,7 @@ class ShaderID
 	static unsigned int mPerMaterialBuffer;
 	static unsigned int mPerObjectBuffer;
 	static unsigned int mainTex;
+	static unsigned int params;
 	static std::mutex mtx;
 public:
 	static void Init();
@@ -18,6 +19,7 @@ public:
 	static unsigned int GetPerObjectBufferID() { return mPerObjectBuffer; }
 	static unsigned int GetMainTex() { return mainTex; }
 	static unsigned int PropertyToID(std::string str);
+	static unsigned int GetParams() { return params; }
 
 };
 

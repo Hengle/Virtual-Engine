@@ -24,7 +24,6 @@
 #include "Singleton/MathLib.h"
 #include "JobSystem/JobInclude.h"
 #include "ResourceManagement/AssetDatabase.h"
-#include "LogicComponent/CameraMove.h"
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
@@ -35,34 +34,34 @@ using namespace DirectX::PackedVector;
 const int gNumFrameResources = 3;
 
 #include "LogicComponent/World.h"
-class VEngine : public D3DApp
+#include "IRendererBase.h"
+
+
+class VEngine : public IRendererBase
 {
 public:
 	std::vector<JobBucket*> buckets[2];
-	StackObject<CameraMove> camMove;
+
 	bool bucketsFlag = false;
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> mComputeCommandQueue;
-	VEngine(HINSTANCE hInstance);
+	ComPtr<ID3D12CommandQueue> mComputeCommandQueue;
+	VEngine() {};
 	VEngine(const VEngine& rhs) = delete;
 	VEngine& operator=(const VEngine& rhs) = delete;
-	~VEngine();
-	void InitRenderer();
+	void InitRenderer(D3DAppDataPack& pack);
 	void DisposeRenderer();
-
-	virtual void OnPressMinimizeKey(bool minimize);
-	virtual bool Initialize()override;
-	virtual void OnResize()override;
-	virtual bool Draw(const GameTimer& gt)override;
-	void UpdateCamera(const GameTimer& gt);
+	virtual bool Initialize(D3DAppDataPack& pack);
+	virtual void OnResize(D3DAppDataPack& pack);
+	virtual bool Draw(D3DAppDataPack& pack, GameTimer&);
+	virtual void Dispose(D3DAppDataPack& pack);
 	//void AnimateMaterials(const GameTimer& gt);
 	//void UpdateObjectCBs(const GameTimer& gt);
 
 	StackObject<JobSystem> pipelineJobSys;
-	void BuildFrameResources();
+	void BuildFrameResources(D3DAppDataPack& pack);
 	bool lastFrameExecute = false;
 	int mCurrFrameResourceIndex = 0;
 	RenderPipeline* rp;
-	ObjectPtr<Camera> mainCamera;
+	
 	float mTheta = 1.3f * XM_PI;
 	float mPhi = 0.4f * XM_PI;
 	float mRadius = 2.5f;
@@ -73,23 +72,28 @@ public:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	PSTR cmdLine, int showCmd)
 {
-	StackObject<VEngine> theApp;
+	StackObject<D3DApp> d3dApp;
+	StackObject<VEngine> renderer;
 	// Enable run-time memory check for debug builds.
 #if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	try
 	{
-		
-		theApp.New(hInstance);
-		if (!theApp->Initialize())
-			return 0;
 
-		int value = theApp->Run();
+		d3dApp.New(hInstance);
+		renderer.New();
+		if (!d3dApp->Initialize())
+			return 0;
+		renderer->Initialize(d3dApp->dataPack);
+		int value = d3dApp->Run(renderer);
 		if (value == -1)
 		{
 			return 0;
 		}
-		theApp.Delete();
+		renderer->Dispose(d3dApp->dataPack);
+		renderer.Delete();
+		d3dApp.Delete();
+
 	}
 	catch (DxException & e)
 	{
@@ -97,123 +101,129 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 		return 0;
 	}
 #else
-	
-	theApp.New(hInstance);
-	if (!theApp->Initialize())
-		return 0;
 
-	int value = theApp->Run();
+
+	d3dApp.New(hInstance);
+	renderer.New();
+	if (!d3dApp->Initialize())
+		return 0;
+	renderer->Initialize(d3dApp->dataPack);
+
+	int value = d3dApp->Run(renderer);
 	if (value == -1)
 	{
 		return 0;
 	}
+	renderer.Delete();
+	d3dApp.Delete();
 #endif
-	theApp.Delete();
 }
 
-void VEngine::OnPressMinimizeKey(bool minimize)
+void VEngine::Dispose(D3DAppDataPack& pack)
 {
-
-}
-
-VEngine::VEngine(HINSTANCE hInstance)
-	: D3DApp(hInstance)
-{
-
-}
-
-void VEngine::InitRenderer()
-{
-	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-
-	ThrowIfFailed(md3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mComputeCommandQueue)));
-	directThreadCommand.New(md3dDevice.Get(), D3D12_COMMAND_LIST_TYPE_DIRECT);
-	directThreadCommand->ResetCommand();
-	// Reset the command list to prep for initialization commands.
-	ShaderCompiler::Init(md3dDevice.Get(), pipelineJobSys.GetPtr());
-	BuildFrameResources();
-	mainCamera = ObjectPtr< Camera>::MakePtr(new Camera(md3dDevice.Get(), Camera::CameraRenderPath::DefaultPipeline));
-	camMove.New(mainCamera);
-	//BuildPSOs();
-	// Execute the initialization commands.
-	// Wait until initialization is complete.
-
-	World::CreateInstance(directThreadCommand->GetCmdList(), md3dDevice.Get());
-
-	rp = RenderPipeline::GetInstance(md3dDevice.Get(),
-		directThreadCommand->GetCmdList());
-	Graphics::Initialize(md3dDevice.Get(), directThreadCommand->GetCmdList());
-	directThreadCommand->CloseCommand();
-	ID3D12CommandList* lst = directThreadCommand->GetCmdList();
-	mCommandQueue->ExecuteCommandLists(1, &lst);
-	FlushCommandQueue();
-	directThreadCommand.Delete();
-}
-void VEngine::DisposeRenderer()
-{
-	FrameResource::mFrameResources.clear();
-	mainCamera.Destroy();
-	RenderPipeline::DestroyInstance();
-	ShaderCompiler::Dispose();
-}
-
-VEngine::~VEngine()
-{
-	mSwapChain->SetFullscreenState(false, nullptr);
+	if (pack.md3dDevice != nullptr)
+		pack.flushCommandQueue(pack);
 	pipelineJobSys->Wait();
-	camMove.Delete();
 	
-	if (md3dDevice != nullptr)
-		FlushCommandQueue();
 	DisposeRenderer();
 	AssetDatabase::DestroyInstance();
 	pipelineJobSys.Delete();
 	World::DestroyInstance();
 	PtrLink::globalEnabled = false;
 	mComputeCommandQueue = nullptr;
-
 }
-bool VEngine::Initialize()
+
+void VEngine::InitRenderer(D3DAppDataPack& pack)
+{
+	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+
+	ThrowIfFailed(pack.md3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mComputeCommandQueue)));
+	directThreadCommand.New(pack.md3dDevice, D3D12_COMMAND_LIST_TYPE_DIRECT);
+	directThreadCommand->ResetCommand();
+	// Reset the command list to prep for initialization commands.
+	ShaderCompiler::Init(pack.md3dDevice, pipelineJobSys.GetPtr());
+	BuildFrameResources(pack);
+	
+	//BuildPSOs();
+	// Execute the initialization commands.
+	// Wait until initialization is complete.
+
+	World::CreateInstance(directThreadCommand->GetCmdList(), pack.md3dDevice);
+
+	rp = RenderPipeline::GetInstance(pack.md3dDevice,
+		directThreadCommand->GetCmdList());
+	Graphics::Initialize(pack.md3dDevice, directThreadCommand->GetCmdList());
+	directThreadCommand->CloseCommand();
+	ID3D12CommandList* lst = directThreadCommand->GetCmdList();
+	pack.mCommandQueue->ExecuteCommandLists(1, &lst);
+	pack.flushCommandQueue(pack);
+	directThreadCommand.Delete();
+}
+void VEngine::DisposeRenderer()
+{
+	FrameResource::mFrameResources.clear();
+	
+	RenderPipeline::DestroyInstance();
+	ShaderCompiler::Dispose();
+}
+bool VEngine::Initialize(D3DAppDataPack& pack)
 {
 	PtrLink::globalEnabled = true;
-	if (!D3DApp::Initialize())
-		return false;
 	//mSwapChain->SetFullscreenState(true, nullptr);
 	ShaderID::Init();
 	buckets[0].reserve(20);
 	buckets[1].reserve(20);
 	UINT cpuCoreCount = std::thread::hardware_concurrency() - 2;	//One for main thread & one for loading
 	pipelineJobSys.New(Max<uint>(1, cpuCoreCount));
-	AssetDatabase::CreateInstance();
-	InitRenderer();
+	AssetDatabase::CreateInstance(pack.md3dDevice);
+	InitRenderer(pack);
 	return true;
 }
+HINSTANCE AppInst_VEngine(const D3DAppDataPack& pack)
+{
+	return pack.mhAppInst;
+}
 
-void VEngine::OnResize()
+float AspectRatio_VEngine(const D3DAppDataPack& pack)
+{
+	return static_cast<float>(pack.mClientWidth) / pack.mClientHeight;
+}
+void VEngine::OnResize(D3DAppDataPack& pack)
 {
 	for (uint i = 0; i < FrameResource::mFrameResources.size(); ++i)
 	{
 		FrameResource::mFrameResources[i]->commandBuffer->Clear();
 	}
-	D3DApp::OnResize();
 	lastFrameExecute = false;
 }
 
-std::vector<Camera*> cam(1);
-bool VEngine::Draw(const GameTimer& gt)
+ID3D12Resource* CurrentBackBuffer_VEngine(const D3DAppDataPack& dataPack)
 {
-	if (mClientHeight < 1 || mClientWidth < 1) return true;
+	return dataPack.mSwapChainBuffer[dataPack.mCurrBackBuffer];
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView_VEngine(const D3DAppDataPack& dataPack)
+{
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
+		dataPack.mRtvHeap->GetCPUDescriptorHandleForHeapStart(),
+		dataPack.mCurrBackBuffer,
+		dataPack.mRtvDescriptorSize);
+}
+bool VEngine::Draw(D3DAppDataPack& pack, GameTimer& timer)
+{
+	if (pack.mClientHeight < 1 || pack.mClientWidth < 1) return true;
 	mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
 	lastResource = FrameResource::mCurrFrameResource;
 	FrameResource::mCurrFrameResource = FrameResource::mFrameResources[mCurrFrameResourceIndex].get();
-	//	FrameResource::mCurrFrameResource->UpdateBeforeFrame(mFence.Get());
+	//	FrameResource::mCurrFrameResource->UpdateBeforeFrame(mFence);
 	std::vector <JobBucket*>& bucketArray = buckets[bucketsFlag];
 	bucketsFlag = !bucketsFlag;
 	JobBucket* mainLogicBucket = pipelineJobSys->GetJobBucket();
 	bucketArray.push_back(mainLogicBucket);
-	JobHandle cameraUpdateJob = mainLogicBucket->GetTask([&]()->void
+	World::GetInstance()->PrepareUpdateJob(mainLogicBucket, FrameResource::mCurrFrameResource, pack.md3dDevice, timer, int2(pack.mClientWidth, pack.mClientHeight));
+	JobHandle cameraUpdateJob = mainLogicBucket->GetTask(nullptr, 0, [&]()->void
 		{
 			/*if (Input::isLeftMousePressing())
 			{
@@ -231,35 +241,34 @@ bool VEngine::Draw(const GameTimer& gt)
 			}
 			UpdateCamera(gt);
 			*/
-			camMove->Run(gt.DeltaTime());
-			mainCamera->SetLens(0.333333 * MathHelper::Pi, AspectRatio(), 0.2, 100);
+			
 			AssetDatabase::GetInstance()->MainThreadUpdate();
-			World::GetInstance()->Update(FrameResource::mCurrFrameResource, md3dDevice.Get());
+			World::GetInstance()->Update(FrameResource::mCurrFrameResource, pack.md3dDevice, timer, int2(pack.mClientWidth, pack.mClientHeight));
 
-		}, nullptr, 0);
+		});
 	//Rendering
-	cam[0] = mainCamera.operator->();
-	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+	pack.windowInfo = const_cast<wchar_t*>(World::GetInstance()->windowInfo.empty() ? nullptr : World::GetInstance()->windowInfo.c_str());
+	pack.mCurrBackBuffer = (pack.mCurrBackBuffer + 1) % pack.SwapChainBufferCount;
 	RenderPipelineData data;
-	data.device = md3dDevice.Get();
-	data.commandQueue = mCommandQueue.Get();
-	data.backBufferHandle = CurrentBackBufferView();
-	data.backBufferResource = CurrentBackBuffer();
+	data.device = pack.md3dDevice;
+	data.commandQueue = pack.mCommandQueue;
+	data.backBufferHandle = CurrentBackBufferView_VEngine(pack);
+	data.backBufferResource = CurrentBackBuffer_VEngine(pack);
 	data.lastResource = lastResource;
 	data.resource = FrameResource::mCurrFrameResource;
-	data.allCameras = &cam;
-	data.fence = mFence.Get();
-	data.fenceIndex = &mCurrentFence;
+	data.allCameras = &World::GetInstance()->GetCameras();
+	data.fence = pack.mFence;
+	data.fenceIndex = &pack.mCurrentFence;
 	data.ringFrameIndex = mCurrFrameResourceIndex;
 	data.executeLastFrame = lastFrameExecute;
 	data.world = World::GetInstance();
-	data.world->windowWidth = mClientWidth;
-	data.world->windowHeight = mClientHeight;
-	data.deltaTime = gt.DeltaTime();
-	data.time = gt.TotalTime();
+	data.world->windowWidth = pack.mClientWidth;
+	data.world->windowHeight = pack.mClientHeight;
+	data.deltaTime = timer.DeltaTime();
+	data.time = timer.TotalTime();
 	rp->PrepareRendering(data, pipelineJobSys.GetPtr(), bucketArray);
 	pipelineJobSys->Wait();//Last Frame's Logic Stop Here
-	HRESULT crashResult = md3dDevice->GetDeviceRemovedReason();
+	HRESULT crashResult = pack.md3dDevice->GetDeviceRemovedReason();
 	if (crashResult != S_OK)
 	{
 		return false;
@@ -270,7 +279,7 @@ bool VEngine::Draw(const GameTimer& gt)
 	pipelineJobSys->ExecuteBucket(bucketArray.data(), bucketArray.size());					//Execute Tasks
 
 	rp->ExecuteRendering(data);
-	HRESULT presentResult = mSwapChain->Present(0, 0);
+	HRESULT presentResult = pack.mSwapChain->Present(0, 0);
 #if defined(DEBUG) | defined(_DEBUG)
 	ThrowHResult(presentResult, PresentFunction);
 #endif
@@ -288,26 +297,12 @@ bool VEngine::Draw(const GameTimer& gt)
 	return true;
 }
 
-void VEngine::UpdateCamera(const GameTimer& gt)
-{
-	mRadius = 1;
-	// Convert Spherical to Cartesian coordinates.
-	XMFLOAT3 mEyePos;
-	mEyePos.x = mRadius * sinf(mPhi) * cosf(mTheta);
-	mEyePos.z = mRadius * sinf(mPhi) * sinf(mTheta);
-	mEyePos.y = mRadius * cosf(mPhi);
-	XMFLOAT3 target = { 0,0,0 };
-	XMFLOAT3 up = { 0,1,0 };
-	mainCamera->LookAt(target, mEyePos, up);
-
-}
-
-void VEngine::BuildFrameResources()
+void VEngine::BuildFrameResources(D3DAppDataPack& pack)
 {
 	FrameResource::mFrameResources.resize(gNumFrameResources);
 	for (int i = 0; i < gNumFrameResources; ++i)
 	{
-		FrameResource::mFrameResources[i] = std::unique_ptr<FrameResource>(new FrameResource(md3dDevice.Get(), 1, 1));
-		FrameResource::mFrameResources[i]->commandBuffer.New(mCommandQueue.Get(), mComputeCommandQueue.Get());
+		FrameResource::mFrameResources[i] = std::unique_ptr<FrameResource>(new FrameResource(pack.md3dDevice, 1, 1));
+		FrameResource::mFrameResources[i]->commandBuffer.New(pack.mCommandQueue, mComputeCommandQueue.Get());
 	}
 }

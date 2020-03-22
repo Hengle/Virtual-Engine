@@ -60,11 +60,13 @@ void CopyToBuffer(
 	UINT64 byteSize,
 	ID3D12GraphicsCommandList* cmdList,
 	ComPtr<ID3D12Resource>& uploadBuffer,
-	ComPtr<ID3D12Resource>& defaultBuffer)
+	ComPtr<ID3D12Resource>& defaultBuffer,
+	TransitionBarrierBuffer* barrierBuffer)
 {
-	Graphics::ResourceStateTransform(cmdList, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, defaultBuffer.Get());
+	barrierBuffer->AddCommand(D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST, defaultBuffer.Get());
+	barrierBuffer->ExecuteCommand(cmdList);
 	cmdList->CopyBufferRegion(defaultBuffer.Get(), 0, uploadBuffer.Get(), 0, byteSize);
-	Graphics::ResourceStateTransform(cmdList, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, defaultBuffer.Get());
+	barrierBuffer->AddCommand(D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ, defaultBuffer.Get());
 
 }
 
@@ -84,10 +86,11 @@ public:
 	virtual void operator()(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* commandList,
-		FrameResource* resource)
+		FrameResource* resource,
+		TransitionBarrierBuffer* barrierBuffer)
 	{
 		FrameResource::ReleaseResourceAfterFlush(uploadResource, resource);
-		CopyToBuffer(byteSize, commandList, uploadResource, defaultResource);
+		CopyToBuffer(byteSize, commandList, uploadResource, defaultResource, barrierBuffer);
 	}
 };
 

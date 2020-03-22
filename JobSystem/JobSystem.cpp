@@ -63,13 +63,14 @@ public:
 	std::atomic<int>* bucketMissionCount;*/
 	void operator()()
 	{
-		int value = (int)-1;
-		while (sys->JobSystemInitialized)
+		while (!sys->jobSystemStart && sys->JobSystemInitialized)
 		{
-			{
-				std::unique_lock<std::mutex> lck(sys->threadMtx);
-				sys->cv.wait(lck);
-			}
+			std::unique_lock<std::mutex> lck(sys->threadMtx);
+			sys->cv.wait(lck);
+		}
+		int value = (int)-1;
+	MAIN_THREAD_LOOP:
+		{
 			JobNode* node = nullptr;
 			while (sys->executingNode.TryPop(&node))
 			{
@@ -87,7 +88,12 @@ public:
 					sys->UpdateNewBucket();
 				}
 			}
-
+			std::unique_lock<std::mutex> lck(sys->threadMtx);
+			if (sys->JobSystemInitialized)
+			{
+				sys->cv.wait(lck);
+				goto MAIN_THREAD_LOOP;
+			}
 		}
 	}
 };
@@ -159,6 +165,7 @@ void JobSystem::ExecuteBucket(JobBucket** bucket, int bucketCount)
 	buckets.resize(bucketCount);
 	memcpy(buckets.data(), bucket, sizeof(JobBucket*) * bucketCount);
 	mainThreadFinished = false;
+	jobSystemStart = true;
 	UpdateNewBucket();
 }
 void JobSystem::ExecuteBucket(JobBucket* bucket, int bucketCount)
@@ -172,6 +179,7 @@ void JobSystem::ExecuteBucket(JobBucket* bucket, int bucketCount)
 		buckets[i] = bucket + i;
 	}
 	mainThreadFinished = false;
+	jobSystemStart = true;
 	UpdateNewBucket();
 }
 

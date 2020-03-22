@@ -15,7 +15,7 @@
 
 #include <DirectXMath.h>
 #include <intrin.h>
-typedef unsigned int uint;
+typedef uint32_t uint;
 #define INLINE inline
 
 namespace Math

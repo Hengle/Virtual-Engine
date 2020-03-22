@@ -1,5 +1,5 @@
 #pragma once
-#include "../IPerCameraResource.h"
+#include "../IPipelineResource.h"
 #include "../../Common/d3dUtil.h"
 class RenderTexture;
 struct CameraTransformData : public IPipelineResource

@@ -1,0 +1,15 @@
+Texture2D<float4> _VirtualTex[100] : register(t0, space0);
+Texture2D<uint4> _IndirectTex : register(t0, space1);
+StructuredBuffer<VTIndices> _IndirectBuffer : register(t1, space1);
+StructuredBuffer<ObjectData> _ObjectDataBuffer : register(t2, space1);
+
+cbuffer Per_Camera_Buffer : register(b0)
+cbuffer VirtualTextureParams : register(b1)
+
+#pragma Geometry
+vertex VS
+fragment PS
+zTest greater
+zWrite on
+Cull back
+#end

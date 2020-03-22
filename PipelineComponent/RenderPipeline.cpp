@@ -3,7 +3,6 @@
 #include "../Common/Camera.h"
 #include "../PipelineComponent/ThreadCommand.h"
 #include "PrepareComponent.h"
-#include "GBufferComponent.h"
 #include "../LogicComponent/World.h"
 #include "SkyboxComponent.h"
 #include "PostProcessingComponent.h"
@@ -15,6 +14,7 @@
 #include "CSMComponent.h"
 #include "../Common/Input.h"
 #include "VolumetricComponent.h"
+#include "../RenderComponent/Terrain/VirtualTexture.h"
 //ThreadCommand* threadCommand;
 RenderPipeline* RenderPipeline::current(nullptr);
 std::unordered_map<std::string, PipelineComponent*> RenderPipeline::componentsLink;
@@ -55,7 +55,7 @@ RenderPipeline::RenderPipeline(ID3D12Device* device, ID3D12GraphicsCommandList* 
 	Init<VolumetricComponent>();
 	Init<DepthComponent>();
 	
-	Init<GBufferComponent>();
+	//Init<GBufferComponent>();
 	Init<SkyboxComponent>();
 	Init<TemporalAntiAlias>();
 	Init<PostProcessingComponent>();
@@ -100,15 +100,20 @@ void RenderPipeline::PrepareRendering(RenderPipelineData& renderData, JobSystem*
 	UINT frameNum = *renderData.fenceIndex + 2;
 
 	ThreadCommand* commandList = renderData.resource->commmonThreadCommand;
-	bucketArray[bucketCountBeforeRendering]->GetTask([=]()->void
+	bucketArray[bucketCountBeforeRendering]->GetTask(nullptr, 0, [=]()->void
 	{
 		commandList->ResetCommand();
 		while (RenderCommand::ExecuteCommand(
-			data.device, commandList->GetCmdList(), renderData.resource))
+			data.device, commandList->GetCmdList(), renderData.resource, commandList->GetBarrierBuffer()))
 		{
 		}
-		commandList->GetCmdList()->Close();
-	}, nullptr, 0);
+		World::GetInstance()->virtualTexture->ExecuteUpdate(
+			data.device,
+			commandList->GetCmdList(),
+			renderData.resource,
+			commandList->GetBarrierBuffer());
+		commandList->CloseCommand();
+	});
 	currentCommandBuffer->ExecuteGraphicsCommandList(commandList->GetCmdList());
 	for (UINT camIndex = 0; camIndex < renderData.allCameras->size(); ++camIndex)
 	{
@@ -120,7 +125,7 @@ void RenderPipeline::PrepareRendering(RenderPipelineData& renderData, JobSystem*
 			data.width = cam->renderTarget->GetWidth();
 			data.height = cam->renderTarget->GetHeight();
 			data.isBackBufferForPresent = false;
-			data.backBufferHandle = cam->renderTarget->GetColorDescriptor(0);
+			data.backBufferHandle = cam->renderTarget->GetColorDescriptor(0, 0);
 			data.backBuffer = cam->renderTarget->GetResource();
 		}
 		else
@@ -147,21 +152,25 @@ void RenderPipeline::PrepareRendering(RenderPipelineData& renderData, JobSystem*
 				if (command.type == TemporalResourceCommand::CommandType_Create_RenderTexture ||
 					command.type == TemporalResourceCommand::CommandType_Create_StructuredBuffer)
 				{
+#ifdef _DEBUG
 					//Alread contained
-					if (tempRTAllocator.Contains(command.uID))
+					if (renderTextureMarks.keyDicts.find(command.uID) != renderTextureMarks.keyDicts.end())
 					{
 						throw "Alread Created Render Texture!";
 					}
+#endif
 					RenderTextureMark mark = { command.uID, j, command.descriptor, i, i };
 					renderTextureMarks.Add(command.uID, mark);
 				}
 				else
 				{
 					RenderTextureMark* markPtr = renderTextureMarks[command.uID];
+#ifdef _DEBUG
 					if (markPtr == nullptr)
 					{
 						throw "No Such Render Texture!";
 					}
+#endif
 					markPtr->endComponent = i;
 					//command.tempResState
 					component->requiredRTs.push_back({
@@ -236,7 +245,7 @@ void RenderPipeline::ExecuteRendering(RenderPipelineData& renderData)
 		//Final Execute
 		if (renderData.executeLastFrame)
 		{
-			renderData.lastResource->WaitForLastFrameResource(*renderData.fenceIndex, renderData.commandQueue, renderData.fence);
+			//renderData.lastResource->WaitForLastFrameResource(*renderData.fenceIndex, renderData.commandQueue, renderData.fence);
 			renderData.lastResource->commandBuffer->Submit();
 			
 		}

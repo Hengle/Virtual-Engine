@@ -14,7 +14,7 @@
 #include "d3dUtil.h"
 #include "../Common/MObject.h"
 #include "../Singleton/FrameResource.h"
-#include "../PipelineComponent/IPerCameraResource.h"
+#include "../PipelineComponent/IPipelineResource.h"
 class PipelineComponent;
 class RenderTexture;
 class Camera : public MObject

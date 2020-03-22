@@ -190,7 +190,7 @@ public:
 			Graphics::Blit(
 				commandList,
 				device,
-				&inputColorBuffer->GetColorDescriptor(0), 1,
+				&inputColorBuffer->GetColorDescriptor(0, 0), 1,
 				nullptr,
 				toRTContainer, 0,
 				width, height,
@@ -201,7 +201,7 @@ public:
 			Graphics::Blit(
 				commandList,
 				device,
-				&renderTargetTex->GetColorDescriptor(0), 1,
+				&renderTargetTex->GetColorDescriptor(0, 0), 1,
 				nullptr,
 				toRTContainer, 0,
 				width, height,
@@ -213,21 +213,21 @@ public:
 				VolumetricComponent::volumeRT->GetWriteState(),
 				VolumetricComponent::volumeRT->GetResource());
 		}
-		
-		transitionBarrier.AddCommand( tempCamData->lastRenderTarget->GetReadState(), D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastRenderTarget->GetResource());
-		transitionBarrier.AddCommand( tempCamData->lastMotionVectorTexture->GetReadState(), D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastMotionVectorTexture->GetResource());
-		transitionBarrier.AddCommand( tempCamData->lastDepthTexture->GetReadState(), D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastDepthTexture->GetResource());
-		transitionBarrier.AddCommand( renderTargetTex->GetWriteState(), D3D12_RESOURCE_STATE_COPY_SOURCE, renderTargetTex->GetResource());
-		transitionBarrier.AddCommand( inputDepthBuffer->GetReadState(), D3D12_RESOURCE_STATE_COPY_SOURCE, inputDepthBuffer->GetResource());
+
+		transitionBarrier.AddCommand(tempCamData->lastRenderTarget->GetReadState(), D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastRenderTarget->GetResource());
+		transitionBarrier.AddCommand(tempCamData->lastMotionVectorTexture->GetReadState(), D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastMotionVectorTexture->GetResource());
+		transitionBarrier.AddCommand(tempCamData->lastDepthTexture->GetReadState(), D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastDepthTexture->GetResource());
+		transitionBarrier.AddCommand(renderTargetTex->GetWriteState(), D3D12_RESOURCE_STATE_COPY_SOURCE, renderTargetTex->GetResource());
+		transitionBarrier.AddCommand(inputDepthBuffer->GetReadState(), D3D12_RESOURCE_STATE_COPY_SOURCE, inputDepthBuffer->GetResource());
 		transitionBarrier.ExecuteCommand(commandList);
 		Graphics::CopyTexture(commandList, renderTargetTex, 0, 0, tempCamData->lastRenderTarget, 0, 0);
 		Graphics::CopyTexture(commandList, motionVector, 0, 0, tempCamData->lastMotionVectorTexture, 0, 0);
 		Graphics::CopyTexture(commandList, inputDepthBuffer, 0, 0, tempCamData->lastDepthTexture, 0, 0);
-		transitionBarrier.AddCommand( D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastRenderTarget->GetReadState(), tempCamData->lastRenderTarget->GetResource());
-		transitionBarrier.AddCommand( D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastMotionVectorTexture->GetReadState(), tempCamData->lastMotionVectorTexture->GetResource());
-		transitionBarrier.AddCommand( D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastDepthTexture->GetReadState(), tempCamData->lastDepthTexture->GetResource());
-		transitionBarrier.AddCommand( D3D12_RESOURCE_STATE_COPY_SOURCE, renderTargetTex->GetWriteState(), renderTargetTex->GetResource());
-		transitionBarrier.AddCommand( D3D12_RESOURCE_STATE_COPY_SOURCE, inputDepthBuffer->GetWriteState(), inputDepthBuffer->GetResource());
+		transitionBarrier.AddCommand(D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastRenderTarget->GetReadState(), tempCamData->lastRenderTarget->GetResource());
+		transitionBarrier.AddCommand(D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastMotionVectorTexture->GetReadState(), tempCamData->lastMotionVectorTexture->GetResource());
+		transitionBarrier.AddCommand(D3D12_RESOURCE_STATE_COPY_DEST, tempCamData->lastDepthTexture->GetReadState(), tempCamData->lastDepthTexture->GetResource());
+		transitionBarrier.AddCommand(D3D12_RESOURCE_STATE_COPY_SOURCE, renderTargetTex->GetWriteState(), renderTargetTex->GetResource());
+		transitionBarrier.AddCommand(D3D12_RESOURCE_STATE_COPY_SOURCE, inputDepthBuffer->GetWriteState(), inputDepthBuffer->GetResource());
 		transitionBarrier.AddCommand(motionVector->GetReadState(), motionVector->GetWriteState(), motionVector->GetResource());
 	}
 };

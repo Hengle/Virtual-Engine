@@ -12,7 +12,8 @@ void RenderCommand::AddCommand(RenderCommand* command)
 bool RenderCommand::ExecuteCommand(
 	ID3D12Device* device,
 	ID3D12GraphicsCommandList* commandList,
-	FrameResource* resource)
+	FrameResource* resource,
+	TransitionBarrierBuffer* barrierBuffer)
 {
 	RenderCommand* ptr = nullptr;
 	bool v = false;
@@ -22,6 +23,6 @@ bool RenderCommand::ExecuteCommand(
 	}
 	if (!v) return false;
 	PointerKeeper<RenderCommand> keeper(ptr);
-	(*ptr)(device, commandList, resource);
+	(*ptr)(device, commandList, resource, barrierBuffer);
 	return true;
 }

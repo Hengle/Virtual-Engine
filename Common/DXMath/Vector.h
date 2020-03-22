@@ -24,6 +24,7 @@ namespace Math
 	class Vector3
 	{
 		friend class Matrix3;
+		friend class Vector4;
 	public:
 
 		INLINE Vector3() {}
@@ -89,6 +90,7 @@ namespace Math
 	class Vector4
 	{
 	public:
+		friend class Vector3;
 		INLINE Vector4() {}
 		INLINE Vector4(float x, float y, float z, float w) : m_vec(XMVectorSet(x, y, z, w)) {}
 		INLINE Vector4(const Vector3& xyz, float w) : m_vec(XMVectorSetW(xyz, w)) {  }
@@ -148,14 +150,19 @@ namespace Math
 			XMStoreFloat3(&f, m_vec);
 			return f;
 		}
+
+		INLINE operator Vector3()
+		{
+			return Vector3(m_vec);
+		}
 	protected:
 		XMVECTOR m_vec;
 	};
 
 	INLINE Vector3::Vector3(const Vector4& v)
 	{
-		Scalar W = v.GetW();
-		m_vec = XMVectorSelect(XMVectorDivide(v, W), v, XMVectorEqual(W, SplatZero()));
+		m_vec = v.m_vec;
+		m_vec.m128_f32[3] = 0;
 	}
 
 } // namespace Math

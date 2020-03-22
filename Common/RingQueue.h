@@ -1,4 +1,5 @@
 #pragma once
+#include <type_traits>
 template <typename T>
 class RingQueue
 {
@@ -13,7 +14,7 @@ private:
 		template<typename... Args>
 		void Emplace(Args&&... args)
 		{
-			new (&value)T(args...);
+			new (&value)T(std::forward<Args>(args)...);
 		}
 	};
 	Element* arr = nullptr;
@@ -29,13 +30,13 @@ private:
 			new (newArr + i - start) Element(arr[i % capacity]);
 			arr[i % capacity].~Element();
 		}
+		end -= start;
+		start = 0;
 		free(arr);
 		arr = newArr;
 		capacity = newCapacity;
 	}
 public:
-
-	RingQueue() {}
 	RingQueue(size_t initCapacity) : capacity(initCapacity)
 	{
 		arr = (Element*)malloc(sizeof(Element) * initCapacity);
@@ -59,9 +60,11 @@ public:
 		end = 0;
 	}
 
+	size_t Length() const { return end - start; }
+
 	void Push(const T& value)
 	{
-		if (end - start >= capacity)
+		if (Length() >= capacity)
 		{
 			Resize();
 		}
@@ -72,22 +75,17 @@ public:
 	template<typename... Args>
 	void EmplacePush(Args&&... args)
 	{
-		if (end - start >= capacity)
+		if (Length() >= capacity)
 		{
 			Resize();
 		}
 		size_t curr = end++;
-		arr[curr % capacity].Emplace(args...);
-	}
-
-	void Push(T&& value)
-	{
-		Push(value);
+		arr[curr % capacity].Emplace(std::forward<Args>(args)...);
 	}
 
 	bool TryPop(T* target)
 	{
-		if (end - start == 0)
+		if (Length() == 0)
 			return false;
 		Element* result = &arr[start % capacity];
 		*target = result->value;

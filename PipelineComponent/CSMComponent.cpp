@@ -129,7 +129,7 @@ public:
 	UploadBuffer cullBuffer;
 	UploadBuffer csmParamBuffer;
 	Vector4 sunPositions[DirectionalLight::CascadeLevel];
-	CSMLastDirectLightPosition(ID3D12Device* device):
+	CSMLastDirectLightPosition(ID3D12Device* device) :
 		cullBuffer(device, DirectionalLight::CascadeLevel * 3, true, sizeof(GRPRenderManager::CullData)),
 		csmParamBuffer(device, DirectionalLight::CascadeLevel * 3, true, sizeof(ShadowmapDrawParam))
 	{
@@ -163,9 +163,9 @@ public:
 			Vector3 sunForward = dLight->transform->GetForward();
 			sunForward = -sunForward;
 			CSMLastDirectLightPosition* lastLightData = (CSMLastDirectLightPosition*)cam->GetResource(selfPtr, [&]()->CSMLastDirectLightPosition*
-			{
-				return new CSMLastDirectLightPosition(device);
-			});
+				{
+					return new CSMLastDirectLightPosition(device);
+				});
 			uint shadowReses[DirectionalLight::CascadeLevel] =
 			{
 				dLight->GetShadowmapResolution(0),
@@ -189,10 +189,10 @@ public:
 				lastLightData->sunPositions,
 				shadowReses);
 			LightCameraData* camData = (LightCameraData*)cam->GetResource(lightComp, [&]()->LightCameraData*
-			{
-				throw "Should Not Be Here!";
-				return nullptr;
-			});
+				{
+					throw "Should Not Be Here!";
+					return nullptr;
+				});
 
 			LightCullCBuffer& cb = *(LightCullCBuffer*)camData->lightCBuffer.GetMappedDataPtr(frameIndex);
 			cb._CascadeDistance = {
@@ -228,7 +228,7 @@ public:
 			for (uint i = 0; i < DirectionalLight::CascadeLevel; ++i)
 			{
 				auto shadowmap = dLight->GetShadowmap(i);
-			    tCmd->GetBarrierBuffer()->AddCommand(shadowmap->GetReadState(), shadowmap->GetWriteState(), shadowmap->GetResource());
+				tCmd->GetBarrierBuffer()->AddCommand(shadowmap->GetReadState(), shadowmap->GetWriteState(), shadowmap->GetResource());
 			}
 			tCmd->GetBarrierBuffer()->ExecuteCommand(commandList);
 			for (uint i = 0; i < DirectionalLight::CascadeLevel; ++i)
@@ -251,7 +251,7 @@ public:
 				}
 
 				commandList->OMSetRenderTargets(
-					0, nullptr, false, &shadowmap->GetColorDescriptor(0));
+					0, nullptr, false, &shadowmap->GetColorDescriptor(0, 0));
 				shadowmap->ClearRenderTarget(commandList, 0, 0, 0);
 				shadowmap->SetViewport(commandList);
 				ShadowmapDrawParam* drawParams = (ShadowmapDrawParam*)lastLightData->csmParamBuffer.GetMappedDataPtr(i + DirectionalLight::CascadeLevel * frameIndex);

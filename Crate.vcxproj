@@ -35,11 +35,16 @@
     <ClCompile Include="Common\MObject.cpp" />
     <ClCompile Include="Common\Random.cpp" />
     <ClCompile Include="Common\StringUtility.cpp" />
-    <ClCompile Include="VEngine.cpp" />
     <ClCompile Include="JobSystem\JobBucket.cpp" />
     <ClCompile Include="JobSystem\JobHandle.cpp" />
     <ClCompile Include="JobSystem\JobNode.cpp" />
     <ClCompile Include="JobSystem\JobSystem.cpp" />
+    <ClCompile Include="LogicComponent\Terrain\TerrainMainLogic.cpp" />
+    <ClCompile Include="LogicComponent\Terrain\TerrainQuadTree.cpp" />
+    <ClCompile Include="LogicComponent\Utility\IEnumerator.cpp" />
+    <ClCompile Include="RenderComponent\Terrain\TerrainDrawer.cpp" />
+    <ClCompile Include="RenderComponent\Terrain\VirtualTexture.cpp" />
+    <ClCompile Include="VEngine.cpp" />
     <ClCompile Include="LogicComponent\CameraMove.cpp" />
     <ClCompile Include="LogicComponent\Component.cpp" />
     <ClCompile Include="LogicComponent\DirectionalLight.cpp" />
@@ -50,7 +55,6 @@
     <ClCompile Include="PipelineComponent\CSMComponent.cpp" />
     <ClCompile Include="PipelineComponent\CullTask.cpp" />
     <ClCompile Include="PipelineComponent\DepthComponent.cpp" />
-    <ClCompile Include="PipelineComponent\GBufferComponent.cpp" />
     <ClCompile Include="PipelineComponent\LightingComponent.cpp" />
     <ClCompile Include="PipelineComponent\PipelineComponent.cpp" />
     <ClCompile Include="PipelineComponent\PostProcessingComponent.cpp" />
@@ -99,7 +103,6 @@
     <ClInclude Include="Common\BitArray.h" />
     <ClInclude Include="Common\Camera.h" />
     <ClInclude Include="Common\ConcurrentStack.h" />
-    <ClInclude Include="Common\ConstantBufferStruct.h" />
     <ClInclude Include="Common\d3dApp.h" />
     <ClInclude Include="Common\d3dUtil.h" />
     <ClInclude Include="Common\d3dx12.h" />
@@ -126,6 +129,8 @@
     <ClInclude Include="Common\Runnable.h" />
     <ClInclude Include="Common\std_dxt.h" />
     <ClInclude Include="Common\StringUtility.h" />
+    <ClInclude Include="Common\TypeWiper.h" />
+    <ClInclude Include="IRendererBase.h" />
     <ClInclude Include="JobSystem\ConcurrentQueue.h" />
     <ClInclude Include="JobSystem\JobBucket.h" />
     <ClInclude Include="JobSystem\JobHandle.h" />
@@ -137,7 +142,10 @@
     <ClInclude Include="LogicComponent\Component.h" />
     <ClInclude Include="LogicComponent\DirectionalLight.h" />
     <ClInclude Include="LogicComponent\GRPRenderer.h" />
+    <ClInclude Include="LogicComponent\Terrain\TerrainMainLogic.h" />
+    <ClInclude Include="LogicComponent\Terrain\TerrainQuadTree.h" />
     <ClInclude Include="LogicComponent\Transform.h" />
+    <ClInclude Include="LogicComponent\Utility\IEnumerator.h" />
     <ClInclude Include="LogicComponent\World.h" />
     <ClInclude Include="PipelineComponent\AutoExposure.h" />
     <ClInclude Include="PipelineComponent\Bloom.h" />
@@ -148,8 +156,7 @@
     <ClInclude Include="PipelineComponent\CSMComponent.h" />
     <ClInclude Include="PipelineComponent\CullTask.h" />
     <ClInclude Include="PipelineComponent\DepthComponent.h" />
-    <ClInclude Include="PipelineComponent\GBufferComponent.h" />
-    <ClInclude Include="PipelineComponent\IPerCameraResource.h" />
+    <ClInclude Include="PipelineComponent\IPipelineResource.h" />
     <ClInclude Include="PipelineComponent\LightingComponent.h" />
     <ClInclude Include="PipelineComponent\PipelineComponent.h" />
     <ClInclude Include="PipelineComponent\PostProcessingComponent.h" />
@@ -180,6 +187,8 @@
     <ClInclude Include="RenderComponent\ShaderIO.h" />
     <ClInclude Include="RenderComponent\Skybox.h" />
     <ClInclude Include="RenderComponent\StructuredBuffer.h" />
+    <ClInclude Include="RenderComponent\Terrain\TerrainDrawer.h" />
+    <ClInclude Include="RenderComponent\Terrain\VirtualTexture.h" />
     <ClInclude Include="RenderComponent\Texture.h" />
     <ClInclude Include="RenderComponent\TextureHeap.h" />
     <ClInclude Include="RenderComponent\TransitionBarrierBuffer.h" />
@@ -300,6 +309,8 @@
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <OmitFramePointers>false</OmitFramePointers>
       <MinFilesInUnityFile>20</MinFilesInUnityFile>
+      <OpenMPSupport>true</OpenMPSupport>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -345,6 +356,8 @@
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <OmitFramePointers>true</OmitFramePointers>
       <MinFilesInUnityFile>20</MinFilesInUnityFile>
+      <OpenMPSupport>true</OpenMPSupport>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -8,7 +8,7 @@
 #include "../PipelineComponent/ThreadCommand.h"
 #include "../Common/Pool.h"
 #include "../JobSystem/JobSystem.h"
-#include "../PipelineComponent/IPerCameraResource.h"
+#include "../PipelineComponent/IPipelineResource.h"
 #include "../Common/MetaLib.h"
 #include <mutex>
 #include "../PipelineComponent/CommandBuffer.h"

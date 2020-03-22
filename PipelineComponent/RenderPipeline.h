@@ -17,7 +17,7 @@ struct RenderPipelineData
 	D3D12_CPU_DESCRIPTOR_HANDLE backBufferHandle;
 	FrameResource* lastResource;
 	FrameResource* resource;
-	std::vector<Camera*>* allCameras;
+	std::vector<ObjectPtr<Camera>>* allCameras;
 	ID3D12Fence* fence;
 	UINT64* fenceIndex;
 	bool executeLastFrame;

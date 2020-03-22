@@ -5,9 +5,11 @@
 #include "d3dApp.h"
 #include "Input.h"
 #include <WindowsX.h>
+#include "../IRendererBase.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
+
 LRESULT CALLBACK
 MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -15,40 +17,67 @@ MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	// before CreateWindow returns, and thus before mhMainWnd is valid.
 	return D3DApp::GetApp()->MsgProc(hwnd, msg, wParam, lParam);
 }
-Microsoft::WRL::ComPtr<ID3D12Device> D3DApp::md3dDevice;
 D3DApp* D3DApp::mApp = nullptr;
 D3DApp* D3DApp::GetApp()
 {
 	return mApp;
 }
-
 D3DApp::D3DApp(HINSTANCE hInstance)
-	: mhAppInst(hInstance)
 {
+	memset(&dataPack, 0, sizeof(D3DAppDataPack));
+	dataPack.mClientWidth = 2560;
+	dataPack.mClientHeight = 1440;
+	dataPack.flushCommandQueue = [](D3DAppDataPack& dataPack)
+	{
+		// Advance the fence value to mark commands up to this fence point.
+		dataPack.mCurrentFence++;
+
+		// Add an instruction to the command queue to set a new fence point.  Because we 
+		// are on the GPU timeline, the new fence point won't be set until the GPU finishes
+		// processing all the commands prior to this Signal().
+		ThrowIfFailed(dataPack.mCommandQueue->Signal(dataPack.mFence, dataPack.mCurrentFence));
+		if (dataPack.mFence->GetCompletedValue() < dataPack.mCurrentFence)
+		{
+			HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
+
+			// Fire event when GPU hits current fence.  
+			ThrowIfFailed(dataPack.mFence->SetEventOnCompletion(dataPack.mCurrentFence, eventHandle));
+
+			// Wait until the GPU hits current fence event is fired.
+			WaitForSingleObject(eventHandle, INFINITE);
+			CloseHandle(eventHandle);
+		}
+		// Wait until the GPU has completed commands up to this fence point.
+	};
+	dataPack.mhAppInst = hInstance;
+#define RELEASE_PTR(ptr) if(ptr){ptr->Release(); ptr = nullptr;}
+	dataPack.disposeFunction = [](D3DAppDataPack& pack)
+	{
+		RELEASE_PTR(pack.mdxgiFactory);
+		RELEASE_PTR(pack.mSwapChain);
+		RELEASE_PTR(pack.md3dDevice);
+		RELEASE_PTR(pack.mFence);
+		RELEASE_PTR(pack.mCommandQueue);
+		for (uint i = 0; i < pack.SwapChainBufferCount; ++i)
+			RELEASE_PTR(pack.mSwapChainBuffer[i]);
+		RELEASE_PTR(pack.mRtvHeap);
+	};
 	if (mApp) delete mApp;
 	mApp = this;
 }
+#undef RELEASE_PTR
 
 D3DApp::~D3DApp()
 {
+	dataPack.mSwapChain->SetFullscreenState(false, nullptr);
 	mApp = nullptr;
 }
 
-HINSTANCE D3DApp::AppInst()const
-{
-	return mhAppInst;
-}
-
-float D3DApp::AspectRatio()const
-{
-	return static_cast<float>(mClientWidth) / mClientHeight;
-}
-
-int D3DApp::Run()
+int D3DApp::Run(IRendererBase* renderBase)
 {
 	MSG msg = { 0 };
 
-	mTimer.Reset();
+	timer.Reset();
 	while (msg.message != WM_QUIT)
 	{
 
@@ -61,14 +90,14 @@ int D3DApp::Run()
 		// Otherwise, do animation/game stuff.
 		else
 		{
-			mTimer.Tick();
-			if (!mAppPaused)
+			timer.Tick();
+			if (!dataPack.mAppPaused)
 			{
 				CalculateFrameStats();
-				if (!Draw(mTimer))
+				if (!renderBase->Draw(dataPack, timer))
 				{
-					if (mSwapChain)
-						mSwapChain->SetFullscreenState(false, nullptr);
+					if (dataPack.mSwapChain)
+						dataPack.mSwapChain->SetFullscreenState(false, nullptr);
 					return -1;
 				}
 			}
@@ -93,57 +122,63 @@ bool D3DApp::Initialize()
 
 	if (!InitDirect3D())
 		return false;
-	OnResize();
+	OnResize(dataPack);
 	return true;
 }
 
 void D3DApp::CreateRtvAndDsvDescriptorHeaps()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-	rtvHeapDesc.NumDescriptors = SwapChainBufferCount;
+	rtvHeapDesc.NumDescriptors = dataPack.SwapChainBufferCount;
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	rtvHeapDesc.NodeMask = 0;
-	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(
-		&rtvHeapDesc, IID_PPV_ARGS(&mRtvHeap)));
+	ThrowIfFailed(dataPack.md3dDevice->CreateDescriptorHeap(
+		&rtvHeapDesc, IID_PPV_ARGS(&dataPack.mRtvHeap)));
 }
 
-void D3DApp::OnResize()
+void D3DApp::OnResize(D3DAppDataPack& pack)
 {
-	assert(md3dDevice);
-	assert(mSwapChain);
+	assert(dataPack.md3dDevice);
+	assert(dataPack.mSwapChain);
 	// Flush before changing any resources.
-	FlushCommandQueue();
+	pack.flushCommandQueue(pack);
 
 	// Release the previous resources we will be recreating.
-	for (int i = 0; i < SwapChainBufferCount; ++i)
-		mSwapChainBuffer[i].Reset();
+	for (int i = 0; i < dataPack.SwapChainBufferCount; ++i)
+	{
+		if (dataPack.mSwapChainBuffer[i])
+		{
+			dataPack.mSwapChainBuffer[i]->Release();
+			dataPack.mSwapChainBuffer[i] = nullptr;
+		}
+	}
 
 	// Resize the swap chain.
-	ThrowIfFailed(mSwapChain->ResizeBuffers(
-		SwapChainBufferCount,
-		mClientWidth, mClientHeight,
-		mBackBufferFormat,
+	ThrowIfFailed(dataPack.mSwapChain->ResizeBuffers(
+		dataPack.SwapChainBufferCount,
+		dataPack.mClientWidth, dataPack.mClientHeight,
+		dataPack.BACK_BUFFER_FORMAT,
 		DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH));
 
-	mCurrBackBuffer = 0;
+	dataPack.mCurrBackBuffer = 0;
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
-	for (UINT i = 0; i < SwapChainBufferCount; i++)
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHeapHandle(dataPack.mRtvHeap->GetCPUDescriptorHandleForHeapStart());
+	for (UINT i = 0; i < dataPack.SwapChainBufferCount; i++)
 	{
-		ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
-		md3dDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr, rtvHeapHandle);
-		rtvHeapHandle.Offset(1, mRtvDescriptorSize);
+		ThrowIfFailed(dataPack.mSwapChain->GetBuffer(i, IID_PPV_ARGS(&dataPack.mSwapChainBuffer[i])));
+		dataPack.md3dDevice->CreateRenderTargetView(dataPack.mSwapChainBuffer[i], nullptr, rtvHeapHandle);
+		rtvHeapHandle.Offset(1, dataPack.mRtvDescriptorSize);
 	}
 	// Update the viewport transform to cover the client area.
-	mScreenViewport.TopLeftX = 0;
-	mScreenViewport.TopLeftY = 0;
-	mScreenViewport.Width = static_cast<float>(mClientWidth);
-	mScreenViewport.Height = static_cast<float>(mClientHeight);
-	mScreenViewport.MinDepth = 0.0f;
-	mScreenViewport.MaxDepth = 1.0f;
+	dataPack.mScreenViewport.TopLeftX = 0;
+	dataPack.mScreenViewport.TopLeftY = 0;
+	dataPack.mScreenViewport.Width = static_cast<float>(dataPack.mClientWidth);
+	dataPack.mScreenViewport.Height = static_cast<float>(dataPack.mClientHeight);
+	dataPack.mScreenViewport.MinDepth = 0.0f;
+	dataPack.mScreenViewport.MaxDepth = 1.0f;
 
-	mScissorRect = { 0, 0, mClientWidth, mClientHeight };
+	dataPack.mScissorRect = { 0, 0, dataPack.mClientWidth, dataPack.mClientHeight };
 }
 
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -157,56 +192,56 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			OnPressMinimizeKey(true);
-			mAppPaused = true;
-			mTimer.Stop();
+			dataPack.mAppPaused = true;
+			timer.Stop();
 		}
 		else
 		{
 			OnPressMinimizeKey(false);
-			mAppPaused = false;
-			mTimer.Start();
+			dataPack.mAppPaused = false;
+			timer.Start();
 		}
 		return 0;
 
 		// WM_SIZE is sent when the user resizes the window.  
 	case WM_SIZE:
 		// Save the new client area dimensions.
-		mClientWidth = LOWORD(lParam);
-		mClientHeight = HIWORD(lParam);
-		if (md3dDevice)
+		dataPack.mClientWidth = LOWORD(lParam);
+		dataPack.mClientHeight = HIWORD(lParam);
+		if (dataPack.md3dDevice)
 		{
 			if (wParam == SIZE_MINIMIZED)
 			{
-				mAppPaused = true;
-				mMinimized = true;
-				mMaximized = false;
+				dataPack.mAppPaused = true;
+				dataPack.mMinimized = true;
+				dataPack.mMaximized = false;
 			}
 			else if (wParam == SIZE_MAXIMIZED)
 			{
-				mAppPaused = false;
-				mMinimized = false;
-				mMaximized = true;
-				OnResize();
+				dataPack.mAppPaused = false;
+				dataPack.mMinimized = false;
+				dataPack.mMaximized = true;
+				OnResize(dataPack);
 			}
 			else if (wParam == SIZE_RESTORED)
 			{
 
 				// Restoring from minimized state?
-				if (mMinimized)
+				if (dataPack.mMinimized)
 				{
-					mAppPaused = false;
-					mMinimized = false;
-					OnResize();
+					dataPack.mAppPaused = false;
+					dataPack.mMinimized = false;
+					OnResize(dataPack);
 				}
 
 				// Restoring from maximized state?
-				else if (mMaximized)
+				else if (dataPack.mMaximized)
 				{
-					mAppPaused = false;
-					mMaximized = false;
-					OnResize();
+					dataPack.mAppPaused = false;
+					dataPack.mMaximized = false;
+					OnResize(dataPack);
 				}
-				else if (mResizing)
+				else if (dataPack.mResizing)
 				{
 					// If user is dragging the resize bars, we do not resize 
 					// the buffers here because as the user continuously 
@@ -217,9 +252,9 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					// done resizing the window and releases the resize bars, which 
 					// sends a WM_EXITSIZEMOVE message.
 				}
-				else // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
+				else // API call such as SetWindowPos or dataPack.mSwapChain->SetFullscreenState.
 				{
-					OnResize();
+					OnResize(dataPack);
 				}
 			}
 		}
@@ -227,18 +262,18 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		// WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
 	case WM_ENTERSIZEMOVE:
-		mAppPaused = true;
-		mResizing = true;
-		mTimer.Stop();
+		dataPack.mAppPaused = true;
+		dataPack.mResizing = true;
+		timer.Stop();
 		return 0;
 
 		// WM_EXITSIZEMOVE is sent when the user releases the resize bars.
 		// Here we reset everything based on the new window dimensions.
 	case WM_EXITSIZEMOVE:
-		mAppPaused = false;
-		mResizing = false;
-		mTimer.Start();
-		OnResize();
+		dataPack.mAppPaused = false;
+		dataPack.mResizing = false;
+		timer.Start();
+		OnResize(dataPack);
 		return 0;
 
 		// WM_DESTROY is sent when the window is being destroyed.
@@ -311,7 +346,7 @@ bool D3DApp::InitMainWindow()
 	wc.lpfnWndProc = MainWndProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
-	wc.hInstance = mhAppInst;
+	wc.hInstance = dataPack.mhAppInst;
 	wc.hIcon = LoadIcon(0, IDI_APPLICATION);
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
@@ -325,13 +360,13 @@ bool D3DApp::InitMainWindow()
 	}
 
 	// Compute window rectangle dimensions based on requested client area dimensions.
-	RECT R = { 0, 0, mClientWidth, mClientHeight };
+	RECT R = { 0, 0, dataPack.mClientWidth, dataPack.mClientHeight };
 	AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
 	int width = R.right - R.left;
 	int height = R.bottom - R.top;
 
-	mhMainWnd = CreateWindow(L"MainWnd", mMainWndCaption.c_str(),
-		WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, mhAppInst, 0);
+	mhMainWnd = CreateWindow(L"MainWnd", L"Virtual Engine",
+		WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, dataPack.mhAppInst, 0);
 	if (!mhMainWnd)
 	{
 		MessageBox(0, L"CreateWindow Failed.", 0, 0);
@@ -355,32 +390,32 @@ bool D3DApp::InitDirect3D()
 	}
 #endif
 
-	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&mdxgiFactory)));
+	ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&dataPack.mdxgiFactory)));
 
 	// Try to create hardware device.
 	HRESULT hardwareResult = D3D12CreateDevice(
 		nullptr,             // default adapter
 		D3D_FEATURE_LEVEL_11_0,
-		IID_PPV_ARGS(&md3dDevice));
+		IID_PPV_ARGS(&dataPack.md3dDevice));
 
 	// Fallback to WARP device.
 	if (FAILED(hardwareResult))
 	{
 		ComPtr<IDXGIAdapter> pWarpAdapter;
-		ThrowIfFailed(mdxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));
+		ThrowIfFailed(dataPack.mdxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));
 
 		ThrowIfFailed(D3D12CreateDevice(
 			pWarpAdapter.Get(),
 			D3D_FEATURE_LEVEL_11_0,
-			IID_PPV_ARGS(&md3dDevice)));
+			IID_PPV_ARGS(&dataPack.md3dDevice)));
 	}
 
-	ThrowIfFailed(md3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE,
-		IID_PPV_ARGS(&mFence)));
+	ThrowIfFailed(dataPack.md3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE,
+		IID_PPV_ARGS(&dataPack.mFence)));
 
-	mRtvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	mDsvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	mCbvSrvUavDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	dataPack.mRtvDescriptorSize = dataPack.md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	dataPack.mDsvDescriptorSize = dataPack.md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	dataPack.mCbvSrvUavDescriptorSize = dataPack.md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	// Check 4X MSAA quality support for our back buffer format.
 	// All Direct3D 11 capable devices support 4X MSAA for all render 
@@ -403,74 +438,42 @@ void D3DApp::CreateCommandObjects()
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	ThrowIfFailed(md3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
+	ThrowIfFailed(dataPack.md3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&dataPack.mCommandQueue)));
 }
 
 void D3DApp::CreateSwapChain()
 {
 	// Release the previous swapchain we will be recreating.
-	mSwapChain.Reset();
+	if (dataPack.mSwapChain)
+	{
+		dataPack.mSwapChain->Release();
+		dataPack.mSwapChain = nullptr;
+	}
 
 	DXGI_SWAP_CHAIN_DESC sd;
-	sd.BufferDesc.Width = mClientWidth;
-	sd.BufferDesc.Height = mClientHeight;
+	sd.BufferDesc.Width = dataPack.mClientWidth;
+	sd.BufferDesc.Height = dataPack.mClientHeight;
 	sd.BufferDesc.RefreshRate.Numerator = 60;
 	sd.BufferDesc.RefreshRate.Denominator = 1;
-	sd.BufferDesc.Format = mBackBufferFormat;
+	sd.BufferDesc.Format = dataPack.BACK_BUFFER_FORMAT;
 	sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 	sd.SampleDesc.Count = 1;
 	sd.SampleDesc.Quality = 0;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.BufferCount = SwapChainBufferCount;
+	sd.BufferCount = dataPack.SwapChainBufferCount;
 	sd.OutputWindow = mhMainWnd;
 	sd.Windowed = true;
 	sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-	HRESULT r = (mdxgiFactory->CreateSwapChain(
-		mCommandQueue.Get(),
+	HRESULT r = (dataPack.mdxgiFactory->CreateSwapChain(
+		dataPack.mCommandQueue,
 		&sd,
-		&mSwapChain));
+		&dataPack.mSwapChain));
 	size_t t = 0;
 }
 #include "../Singleton/FrameResource.h"
-void D3DApp::FlushCommandQueue()
-{
-	// Advance the fence value to mark commands up to this fence point.
-	mCurrentFence++;
-
-	// Add an instruction to the command queue to set a new fence point.  Because we 
-	// are on the GPU timeline, the new fence point won't be set until the GPU finishes
-	// processing all the commands prior to this Signal().
-	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
-	if (mFence->GetCompletedValue() < mCurrentFence)
-	{
-		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
-
-		// Fire event when GPU hits current fence.  
-		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));
-
-		// Wait until the GPU hits current fence event is fired.
-		WaitForSingleObject(eventHandle, INFINITE);
-		CloseHandle(eventHandle);
-	}
-	// Wait until the GPU has completed commands up to this fence point.
-
-}
-
-ID3D12Resource* D3DApp::CurrentBackBuffer()const
-{
-	return mSwapChainBuffer[mCurrBackBuffer].Get();
-}
-
-D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::CurrentBackBufferView()const
-{
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(
-		mRtvHeap->GetCPUDescriptorHandleForHeapStart(),
-		mCurrBackBuffer,
-		mRtvDescriptorSize);
-}
 
 void D3DApp::CalculateFrameStats()
 {
@@ -484,7 +487,7 @@ void D3DApp::CalculateFrameStats()
 	frameCnt++;
 
 	// Compute averages over one second period.
-	if ((mTimer.TotalTime() - timeElapsed) >= 1.0f)
+	if ((timer.TotalTime() - timeElapsed) >= 1.0f)
 	{
 		float fps = (float)frameCnt; // fps = frameCnt / 1
 		float mspf = 1000.0f / fps;
@@ -492,9 +495,11 @@ void D3DApp::CalculateFrameStats()
 		std::wstring fpsStr = std::to_wstring(fps);
 		std::wstring mspfStr = std::to_wstring(mspf);
 
-		std::wstring windowText = mMainWndCaption +
+		std::wstring windowText = L"Virtual Engine";
+		windowText +=
 			L"    fps: " + fpsStr +
-			L"   mspf: " + mspfStr;
+			L"   mspf: " + mspfStr + L" ";
+		if (dataPack.windowInfo) windowText += dataPack.windowInfo;
 
 		SetWindowText(mhMainWnd, windowText.c_str());
 
@@ -509,7 +514,7 @@ void D3DApp::LogAdapters()
 	UINT i = 0;
 	IDXGIAdapter* adapter = nullptr;
 	std::vector<IDXGIAdapter*> adapterList;
-	while (mdxgiFactory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND)
+	while (dataPack.mdxgiFactory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND)
 	{
 		DXGI_ADAPTER_DESC desc;
 		adapter->GetDesc(&desc);
@@ -546,7 +551,7 @@ void D3DApp::LogAdapterOutputs(IDXGIAdapter* adapter)
 		text += L"\n";
 		OutputDebugString(text.c_str());
 
-		LogOutputDisplayModes(output, mBackBufferFormat);
+		LogOutputDisplayModes(output, dataPack.BACK_BUFFER_FORMAT);
 
 		ReleaseCom(output);
 

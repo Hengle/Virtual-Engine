@@ -4,7 +4,8 @@ StructuredBuffer::StructuredBuffer(
 	ID3D12Device* device,
 	StructuredBufferElement* elementsArray,
 	UINT elementsCount,
-	bool isIndirect
+	bool isIndirect,
+	bool isReadable
 ) : MObject(), elements(elementsCount), offsets(elementsCount)
 {
 	memcpy(elements.data(), elementsArray, sizeof(StructuredBufferElement) * elementsCount);
@@ -19,7 +20,7 @@ StructuredBuffer::StructuredBuffer(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(offst, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS),
-		isIndirect ? D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT : D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		isReadable ? D3D12_RESOURCE_STATE_GENERIC_READ : (isIndirect ? D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT : D3D12_RESOURCE_STATE_UNORDERED_ACCESS),
 		nullptr,
 		IID_PPV_ARGS(&mDefaultBuffer)
 	));

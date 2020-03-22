@@ -1,0 +1,17 @@
+cbuffer IndirectParams : register(b0)
+cbuffer CombineParams : register(b1)
+cbuffer SetBufferParams : register(b2)
+
+RWTexture2D<uint4> _IndirectTex : register(u0, space0);
+RWTexture2D<float4> _CombineResultTex : register(u1, space0);
+RWTexture2D<float4> _TexMipLevels[MAXIMUM_MIP_LEVELS] : register(u0, space1);
+Texture2D<float4> _CombineTex[4] : register(t0, space1);
+RWStructuredBuffer<int> _TextureIndexBuffer : register(u2, space0);
+StructuredBuffer<int2> _SettingCommand : register(t0, space2);
+
+#pragma IndirectSet
+#pragma Combine
+#pragma GenerateMip
+#pragma ClearIndirect
+#pragma ClearBuffer
+#pragma SetBuffer

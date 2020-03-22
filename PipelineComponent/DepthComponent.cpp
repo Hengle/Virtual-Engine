@@ -115,14 +115,13 @@ public:
 		{
 			return new DepthCameraResource(device);
 		});
-		depthRT->ClearRenderTarget(commandList, 0);
-		motionVecRT->ClearRenderTarget(commandList, 0);
+		depthRT->ClearRenderTarget(commandList, 0, 0);
+		motionVecRT->ClearRenderTarget(commandList, 0, 0);
 		depthRT->SetViewport(commandList);
 		ConstBufferElement cullEle;
 		cullEle.buffer = &cameraRes->cullBuffer;
 		cullEle.element = 0 + DepthCameraResource::descHeapSize * frameIndex;
 		cameraRes->hizTexture->BindSRVToHeap(World::GetInstance()->GetGlobalDescHeap(), cameraRes->descIndex, device);
-
 		//Culling
 		world->GetGRPRenderManager()->Culling(
 			commandList,
@@ -140,7 +139,7 @@ public:
 		);
 
 		//Draw Depth prepass
-		commandList->OMSetRenderTargets(0, nullptr, true, &depthRT->GetColorDescriptor(0));
+		commandList->OMSetRenderTargets(0, nullptr, true, &depthRT->GetColorDescriptor(0, 0));
 		world->GetGRPRenderManager()->GetShader()->BindRootSignature(commandList);
 		tcmd->GetBarrierBuffer()->ExecuteCommand(commandList);
 		world->GetGRPRenderManager()->DrawCommand(

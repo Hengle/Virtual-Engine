@@ -122,6 +122,55 @@ inline float XM_CALLCONV dot(const Math::Vector3& vec, const Math::Vector3& vec1
 {
 	return CombineVector3(vec * vec1);
 }
+inline int2 mul(const int2& a, const int2& b)
+{
+	return int2(a.x * b.x, a.y * b.y);
+}
+
+inline uint2 mul(const uint2& a, const uint2& b)
+{
+	return { a.x * b.x, a.y * b.y };
+}
+
+inline int3 mul(const int3& a, const int3& b)
+{
+	return { a.x * b.x, a.y * b.y , a.z * b.z };
+}
+
+inline uint3 mul(const uint3& a, const uint3& b)
+{
+	return { a.x * b.x, a.y * b.y ,a.z * b.z };
+}
+
+inline int4 mul(const int4& a, const int4& b)
+{
+	return { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
+}
+
+inline uint4 mul(const uint4& a, const uint4& b)
+{
+	return { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
+}
+
+inline float2 mul(const float2& a, const float2& b)
+{
+	return { a.x * b.x, a.y * b.y };
+}
+
+
+inline float3 mul(const float3& a, const float3& b)
+{
+	return { a.x * b.x, a.y * b.y , a.z * b.z };
+}
+
+
+
+inline float4 mul(const float4& a, const float4& b)
+{
+	return { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
+}
+
+
 
 inline Math::Vector4 XM_CALLCONV mul(const Math::Matrix4& m, const Math::Vector4& vec)
 {
@@ -591,3 +640,591 @@ Math::Vector3 cross(const Math::Vector3& v1, const Math::Vector3& v2);
 Math::Vector4 normalize(const Math::Vector4& v);
 Math::Vector3 normalize(const Math::Vector3& v);
 Math::Matrix4 GetInverseTransformMatrix(const Math::Vector3& right, const Math::Vector3& up, const Math::Vector3& forward, const Math::Vector3& position);
+struct double2
+{
+	double x;
+	double y;
+	double2(double x, double y) :
+		x(x), y(y) {}
+	double2() : x(0), y(0) {}
+	double2(double x) :
+		x(x), y(x) {}
+};
+
+struct double3
+{
+	double x, y, z;
+	double3(double x, double y, double z) :
+		x(x), y(y), z(z) {}
+	double3() :x(0), y(0), z(0)
+	{
+
+	}
+	double3(double x) : x(x), y(x), z(x) {}
+};
+
+struct double4
+{
+	double x, y, z, w;
+	double4(double x, double y, double z, double w) :
+		x(x), y(y), z(z), w(w) {}
+	double4(double x) :
+		x(x), y(x), z(x), w(x) {}
+	double4() : x(0), y(0), z(0), w(0)
+	{
+
+	}
+};
+
+inline float2 operator+(const float2& a, const float2& b)
+{
+	return float2(a.x + b.x, a.y + b.y);
+}
+inline float3 operator+(const float3& a, const float3& b)
+{
+	return float3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+inline float4 operator+(const float4& a, const float4& b)
+{
+	return float4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+inline double2 operator+(const double2& a, const double2& b)
+{
+	return double2(a.x + b.x, a.y + b.y);
+}
+inline double3 operator+(const double3& a, const double3& b)
+{
+	return double3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+inline double4 operator+(const double4& a, const double4& b)
+{
+	return double4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+inline int2 operator+(const int2& a, const int2& b)
+{
+	return int2(a.x + b.x, a.y + b.y);
+}
+inline int3 operator+(const int3& a, const int3& b)
+{
+	return int3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+inline int4 operator+(const int4& a, const int4& b)
+{
+	return int4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+inline uint2 operator+(const uint2& a, const uint2& b)
+{
+	return uint2(a.x + b.x, a.y + b.y);
+}
+inline uint3 operator+(const uint3& a, const uint3& b)
+{
+	return uint3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+inline uint4 operator+(const uint4& a, const uint4& b)
+{
+	return uint4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+inline float2 operator-(const float2& a, const float2& b)
+{
+	return float2(a.x - b.x, a.y - b.y);
+}
+inline float3 operator-(const float3& a, const float3& b)
+{
+	return float3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+inline float4 operator-(const float4& a, const float4& b)
+{
+	return float4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+inline double2 operator-(const double2& a, const double2& b)
+{
+	return double2(a.x - b.x, a.y - b.y);
+}
+inline double3 operator-(const double3& a, const double3& b)
+{
+	return double3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+inline double4 operator-(const double4& a, const double4& b)
+{
+	return double4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+
+inline int2 operator-(const int2& a, const int2& b)
+{
+	return int2(a.x - b.x, a.y - b.y);
+}
+inline int3 operator-(const int3& a, const int3& b)
+{
+	return int3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+inline int4 operator-(const int4& a, const int4& b)
+{
+	return int4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+
+inline uint2 operator-(const uint2& a, const uint2& b)
+{
+	return uint2(a.x - b.x, a.y - b.y);
+}
+inline uint3 operator-(const uint3& a, const uint3& b)
+{
+	return uint3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+inline uint4 operator-(const uint4& a, const uint4& b)
+{
+	return uint4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+
+inline float2 operator*(const float2& a, const float2& b)
+{
+	return float2(a.x * b.x, a.y * b.y);
+}
+inline float3 operator*(const float3& a, const float3& b)
+{
+	return float3(a.x * b.x, a.y * b.y, a.z * b.z);
+}
+inline float4 operator*(const float4& a, const float4& b)
+{
+	return float4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+}
+inline double2 operator*(const double2& a, const double2& b)
+{
+	return double2(a.x * b.x, a.y * b.y);
+}
+inline double3 operator*(const double3& a, const double3& b)
+{
+	return double3(a.x * b.x, a.y * b.y, a.z * b.z);
+}
+inline double4 operator*(const double4& a, const double4& b)
+{
+	return double4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+}
+
+inline int2 operator*(const int2& a, const int2& b)
+{
+	return int2(a.x * b.x, a.y * b.y);
+}
+inline int3 operator*(const int3& a, const int3& b)
+{
+	return int3(a.x * b.x, a.y * b.y, a.z * b.z);
+}
+inline int4 operator*(const int4& a, const int4& b)
+{
+	return int4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+}
+
+inline uint2 operator*(const uint2& a, const uint2& b)
+{
+	return uint2(a.x * b.x, a.y * b.y);
+}
+inline uint3 operator*(const uint3& a, const uint3& b)
+{
+	return uint3(a.x * b.x, a.y * b.y, a.z * b.z);
+}
+inline uint4 operator*(const uint4& a, const uint4& b)
+{
+	return uint4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+}
+inline float2 operator/(const float2& a, const float2& b)
+{
+	return float2(a.x / b.x, a.y / b.y);
+}
+inline float3 operator/(const float3& a, const float3& b)
+{
+	return float3(a.x / b.x, a.y / b.y, a.z / b.z);
+}
+inline float4 operator/(const float4& a, const float4& b)
+{
+	return float4(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
+}
+inline double2 operator/(const double2& a, const double2& b)
+{
+	return double2(a.x / b.x, a.y / b.y);
+}
+inline double3 operator/(const double3& a, const double3& b)
+{
+	return double3(a.x / b.x, a.y / b.y, a.z / b.z);
+}
+inline double4 operator/(const double4& a, const double4& b)
+{
+	return double4(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
+}
+
+inline int2 operator/(const int2& a, const int2& b)
+{
+	return int2(a.x / b.x, a.y / b.y);
+}
+inline int3 operator/(const int3& a, const int3& b)
+{
+	return int3(a.x / b.x, a.y / b.y, a.z / b.z);
+}
+inline int4 operator/(const int4& a, const int4& b)
+{
+	return int4(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
+}
+
+inline uint2 operator/(const uint2& a, const uint2& b)
+{
+	return uint2(a.x / b.x, a.y / b.y);
+}
+inline uint3 operator/(const uint3& a, const uint3& b)
+{
+	return uint3(a.x / b.x, a.y / b.y, a.z / b.z);
+}
+inline uint4 operator/(const uint4& a, const uint4& b)
+{
+	return uint4(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
+}
+
+
+inline float2& operator+=(float2& a, const float2& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	return a;
+}
+inline float3& operator+=(float3& a, const float3& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	a.z += b.z;
+	return a;
+}
+inline float4& operator+=(float4& a, const float4& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	a.z += b.z;
+	a.w += b.w;
+	return a;
+}
+
+inline double2& operator+=(double2& a, const double2& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	return a;
+}
+inline double3& operator+=(double3& a, const double3& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	a.z += b.z;
+	return a;
+}
+inline double4& operator+=(double4& a, const double4& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	a.z += b.z;
+	a.w += b.w;
+	return a;
+}
+inline uint2& operator+=(uint2& a, const uint2& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	return a;
+}
+inline uint3& operator+=(uint3& a, const uint3& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	a.z += b.z;
+	return a;
+}
+inline uint4& operator+=(uint4& a, const uint4& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	a.z += b.z;
+	a.w += b.w;
+	return a;
+}
+
+inline int2& operator+=(int2& a, const int2& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	return a;
+}
+inline int3& operator+=(int3& a, const int3& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	a.z += b.z;
+	return a;
+}
+inline int4& operator+=(int4& a, const int4& b)
+{
+	a.x += b.x;
+	a.y += b.y;
+	a.z += b.z;
+	a.w += b.w;
+	return a;
+}
+
+
+inline float2& operator-=(float2& a, const float2& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	return a;
+}
+inline float3& operator-=(float3& a, const float3& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	a.z -= b.z;
+	return a;
+}
+inline float4& operator-=(float4& a, const float4& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	a.z -= b.z;
+	a.w -= b.w;
+	return a;
+}
+
+inline double2& operator-=(double2& a, const double2& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	return a;
+}
+inline double3& operator-=(double3& a, const double3& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	a.z -= b.z;
+	return a;
+}
+inline double4& operator-=(double4& a, const double4& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	a.z -= b.z;
+	a.w -= b.w;
+	return a;
+}
+inline uint2& operator-=(uint2& a, const uint2& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	return a;
+}
+inline uint3& operator-=(uint3& a, const uint3& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	a.z -= b.z;
+	return a;
+}
+inline uint4& operator-=(uint4& a, const uint4& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	a.z -= b.z;
+	a.w -= b.w;
+	return a;
+}
+
+inline int2& operator-=(int2& a, const int2& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	return a;
+}
+inline int3& operator-=(int3& a, const int3& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	a.z -= b.z;
+	return a;
+}
+inline int4& operator-=(int4& a, const int4& b)
+{
+	a.x -= b.x;
+	a.y -= b.y;
+	a.z -= b.z;
+	a.w -= b.w;
+	return a;
+}
+
+
+inline float2& operator*=(float2& a, const float2& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	return a;
+}
+inline float3& operator*=(float3& a, const float3& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	a.z *= b.z;
+	return a;
+}
+inline float4& operator*=(float4& a, const float4& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	a.z *= b.z;
+	a.w *= b.w;
+	return a;
+}
+
+inline double2& operator*=(double2& a, const double2& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	return a;
+}
+inline double3& operator*=(double3& a, const double3& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	a.z *= b.z;
+	return a;
+}
+inline double4& operator*=(double4& a, const double4& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	a.z *= b.z;
+	a.w *= b.w;
+	return a;
+}
+inline uint2& operator*=(uint2& a, const uint2& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	return a;
+}
+inline uint3& operator*=(uint3& a, const uint3& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	a.z *= b.z;
+	return a;
+}
+inline uint4& operator*=(uint4& a, const uint4& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	a.z *= b.z;
+	a.w *= b.w;
+	return a;
+}
+
+inline int2& operator*=(int2& a, const int2& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	return a;
+}
+inline int3& operator*=(int3& a, const int3& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	a.z *= b.z;
+	return a;
+}
+inline int4& operator*=(int4& a, const int4& b)
+{
+	a.x *= b.x;
+	a.y *= b.y;
+	a.z *= b.z;
+	a.w *= b.w;
+	return a;
+}
+inline float2& operator/=(float2& a, const float2& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	return a;
+}
+inline float3& operator/=(float3& a, const float3& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	a.z /= b.z;
+	return a;
+}
+inline float4& operator/=(float4& a, const float4& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	a.z /= b.z;
+	a.w /= b.w;
+	return a;
+}
+
+inline double2& operator/=(double2& a, const double2& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	return a;
+}
+inline double3& operator/=(double3& a, const double3& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	a.z /= b.z;
+	return a;
+}
+inline double4& operator/=(double4& a, const double4& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	a.z /= b.z;
+	a.w /= b.w;
+	return a;
+}
+inline uint2& operator/=(uint2& a, const uint2& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	return a;
+}
+inline uint3& operator/=(uint3& a, const uint3& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	a.z /= b.z;
+	return a;
+}
+inline uint4& operator/=(uint4& a, const uint4& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	a.z /= b.z;
+	a.w /= b.w;
+	return a;
+}
+
+inline int2& operator/=(int2& a, const int2& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	return a;
+}
+inline int3& operator/=(int3& a, const int3& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	a.z /= b.z;
+	return a;
+}
+inline int4& operator/=(int4& a, const int4& b)
+{
+	a.x /= b.x;
+	a.y /= b.y;
+	a.z /= b.z;
+	a.w /= b.w;
+	return a;
+}

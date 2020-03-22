@@ -6,11 +6,12 @@ class TransitionBarrierBuffer
 private:
 	friend class ThreadCommand;
 	std::vector<D3D12_RESOURCE_BARRIER> commands;
+	
+public:
 	TransitionBarrierBuffer()
 	{
 		commands.reserve(20);
 	}
-public:
 	void AddCommand(D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState, ID3D12Resource* resource)
 	{
 		commands.push_back(

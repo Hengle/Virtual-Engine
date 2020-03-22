@@ -26,7 +26,10 @@ struct TextureData
 		LoadFormat_RG16 = 5,
 		LoadFormat_BC7 = 6,
 		LoadFormat_BC6H = 7,
-		LoadFormat_Num = 8
+		LoadFormat_UINT = 8,
+		LoadFormat_UINT2 = 9,
+		LoadFormat_UINT4 = 10,
+		LoadFormat_Num = 11
 	};
 	LoadFormat format;
 };
@@ -42,6 +45,8 @@ public:
 		ID3D12Device* device,
 		const std::string& filePath,
 		TextureDimension type = TextureDimension::Tex2D,
+		uint32_t maximumLoadMipmap = 20,
+		uint32_t startMipMap = 0,
 		TextureHeap* placedHeap = nullptr,
 		size_t placedOffset = 0
 	);

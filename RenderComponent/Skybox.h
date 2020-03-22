@@ -14,7 +14,6 @@ private:
 	ObjectPtr<Texture> skyboxTex;
 	Shader* shader;
 	UINT SkyboxCBufferID;
-	UINT descHeapIndex;
 public:
 	virtual ~Skybox();
 	Skybox(

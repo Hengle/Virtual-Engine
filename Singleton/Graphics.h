@@ -10,7 +10,7 @@ enum BackBufferState
 	BackBufferState_RenderTarget = 1
 };
 
-
+class TransitionBarrierBuffer;
 class Graphics
 {
 public:
@@ -78,10 +78,10 @@ public:
 		ID3D12GraphicsCommandList* commandList,
 		UploadBuffer* sourceBuffer, size_t sourceBufferOffset,
 		ID3D12Resource* textureResource, UINT targetMip,
-		UINT width, UINT height, UINT depth, DXGI_FORMAT targetFormat, UINT pixelSize);
+		UINT width, UINT height, UINT depth, DXGI_FORMAT targetFormat, UINT pixelSize, TransitionBarrierBuffer* barrierBuffer);
 	static void CopyBufferToBC5Texture(
 		ID3D12GraphicsCommandList* commandList,
 		UploadBuffer* sourceBuffer, size_t sourceBufferOffset,
 		ID3D12Resource* textureResource, UINT targetMip,
-		UINT width, UINT height, UINT depth, DXGI_FORMAT targetFormat, UINT pixelSize);
+		UINT width, UINT height, UINT depth, DXGI_FORMAT targetFormat, UINT pixelSize, TransitionBarrierBuffer* barrierBuffer);
 };

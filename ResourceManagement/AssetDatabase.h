@@ -23,7 +23,8 @@ private:
 	std::vector<std::pair<Runnable<void(MObject*)>, ObjectPtr<MObject>>> mainThreadRunnable;
 	std::mutex loadingThreadMtx;
 	std::condition_variable cv;
-	AssetDatabase();
+	static ID3D12Device* device;
+	AssetDatabase(ID3D12Device*);
 	~AssetDatabase();
 	Storage<neb::CJsonObject, 1> rootJsonObjStorage;
 	neb::CJsonObject* rootJsonObj;
@@ -61,10 +62,10 @@ public:
 	{
 		return current;
 	}
-	static AssetDatabase* CreateInstance()
+	static AssetDatabase* CreateInstance(ID3D12Device* device)
 	{
 		if (current) return current;
-		new AssetDatabase();
+		new AssetDatabase(device);
 		return current;
 	}
 	static void DestroyInstance()

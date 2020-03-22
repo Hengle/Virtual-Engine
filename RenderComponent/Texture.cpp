@@ -11,10 +11,69 @@
 #include "TextureHeap.h"
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
+struct TextureFormat_LoadData
+{
+	DXGI_FORMAT format;
+	uint pixelSize;
+	bool bcCompress;
+};
+TextureFormat_LoadData Texture_GetFormat(TextureData::LoadFormat loadFormat)
+{
+	TextureFormat_LoadData loadData;
+	loadData.bcCompress = false;
+	switch (loadFormat)
+	{
+	case TextureData::LoadFormat_RGBA8:
+		loadData.pixelSize = 4;
+		loadData.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case TextureData::LoadFormat_RGBA16:
+		loadData.pixelSize = 8;
+		loadData.format = DXGI_FORMAT_R16G16B16A16_UNORM;
+		break;
+	case TextureData::LoadFormat_RGBAFloat16:
+		loadData.pixelSize = 8;
+		loadData.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		break;
+	case TextureData::LoadFormat_RGBAFloat32:
+		loadData.pixelSize = 16;
+		loadData.format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		break;
+	case TextureData::LoadFormat_RG16:
+		loadData.pixelSize = 4;
+		loadData.format = DXGI_FORMAT_R16G16_UNORM;
+		break;
+	case TextureData::LoadFormat_RGFLOAT16:
+		loadData.pixelSize = 4;
+		loadData.format = DXGI_FORMAT_R16G16_FLOAT;
+		break;
+	case TextureData::LoadFormat_BC7:
+		loadData.pixelSize = 1;
+		loadData.format = DXGI_FORMAT_BC7_UNORM;
+		loadData.bcCompress = true;
+		break;
+	case TextureData::LoadFormat_BC6H:
+		loadData.pixelSize = 1;
+		loadData.format = DXGI_FORMAT_BC6H_UF16;
+		loadData.bcCompress = true;
+		break;
+	case TextureData::LoadFormat_UINT:
+		loadData.pixelSize = 2;
+		loadData.format = DXGI_FORMAT_R16_UINT;
+		break;
+	case TextureData::LoadFormat_UINT2:
+		loadData.pixelSize = 4;
+		loadData.format = DXGI_FORMAT_R16G16_UINT;
+		break;
+	case TextureData::LoadFormat_UINT4:
+		loadData.pixelSize = 8;
+		loadData.format = DXGI_FORMAT_R16G16B16A16_UINT;
+		break;
+	}
+	return loadData;
+}
 
-
-
-void ReadData(const std::string& str, TextureData& headerResult, std::vector<char>& dataResult)
+void ReadData(const std::string& str, TextureData& headerResult, std::vector<char>& dataResult, uint& startMipLevel, uint maximumMipLevel)
 {
 	std::ifstream ifs;
 	ifs.open(str, std::ios::binary);
@@ -31,41 +90,35 @@ void ReadData(const std::string& str, TextureData& headerResult, std::vector<cha
 		throw "Invalide Format";
 	}
 	UINT stride = 0;
-	switch (headerResult.format)
+	TextureFormat_LoadData loadData = Texture_GetFormat(headerResult.format);
+	stride = loadData.pixelSize;
+	if (headerResult.depth != 1 && startMipLevel != 0)
 	{
-	case TextureData::LoadFormat_RGBA8:
-		stride = 4;
-		break;
-	case TextureData::LoadFormat_RGBA16:
-		stride = 8;
-		break;
-	case TextureData::LoadFormat_RGBAFloat16:
-		stride = 8;
-		break;
-	case TextureData::LoadFormat_RGBAFloat32:
-		stride = 16;
-		break;
-	case TextureData::LoadFormat_RG16:
-		stride = 4;
-		break;
-	case TextureData::LoadFormat_RGFLOAT16:
-		stride = 4;
-		break;
-	case TextureData::LoadFormat_BC7:
-		stride = 1;
-		break;
-	case TextureData::LoadFormat_BC6H:
-		stride = 1;
-		break;
+		throw "Non-2D map can not use mip streaming!";
 	}
+	headerResult.mipCount = Min<uint32_t>(headerResult.mipCount, maximumMipLevel);
+	startMipLevel = Min<uint32_t>(startMipLevel, headerResult.mipCount - 1);
 	size_t size = 0;
+	size_t offsetSize = 0;
 	UINT depth = headerResult.depth;
 
 	for (UINT j = 0; j < depth; ++j)
 	{
 		UINT width = headerResult.width;
 		UINT height = headerResult.height;
-		for (UINT i = 0; i < headerResult.mipCount; ++i)
+		
+		for (uint i = 0; i < startMipLevel; ++i)
+		{
+			UINT currentChunkSize = stride * width * height;
+			offsetSize += Max<uint>(currentChunkSize, 512);
+			width /= 2;
+			height /= 2;
+			width = Max<uint>(1, width);
+			height = Max<uint>(1, height);
+		}
+		headerResult.width = width;
+		headerResult.height = height;
+		for (UINT i = startMipLevel; i < headerResult.mipCount; ++i)
 		{
 			UINT currentChunkSize = stride * width * height;
 			size += Max<uint>(currentChunkSize, 512);
@@ -76,6 +129,7 @@ void ReadData(const std::string& str, TextureData& headerResult, std::vector<cha
 		}
 	}
 	dataResult.resize(size);
+	ifs.seekg(offsetSize + sizeof(TextureData), std::ios::beg);
 	ifs.read(dataResult.data(), size);
 }
 struct DispatchCBuffer
@@ -128,51 +182,13 @@ public:
 	virtual void operator()(
 		ID3D12Device* device,
 		ID3D12GraphicsCommandList* commandList,
-		FrameResource* resource) override
+		FrameResource* resource,
+		TransitionBarrierBuffer* barrier) override
 	{
 		ubuffer.ReleaseAfterFlush(resource);
 		UINT offset = 0;
 
-		DXGI_FORMAT texFormat;
-		size_t currentOffset = 0;
-		bool bcCompress = false;
-		switch (loadFormat)
-		{
-		case TextureData::LoadFormat_RGBA8:
-			texFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-			currentOffset = 4;
-			break;
-		case TextureData::LoadFormat_RGBA16:
-			texFormat = DXGI_FORMAT_R16G16B16A16_UNORM;
-			currentOffset = 8;
-			break;
-		case TextureData::LoadFormat_RGBAFloat32:
-			texFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-			currentOffset = 16;
-			break;
-		case TextureData::LoadFormat_RGBAFloat16:
-			texFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-			currentOffset = 8;
-			break;
-		case TextureData::LoadFormat_RG16:
-			texFormat = DXGI_FORMAT_R16G16_UNORM;
-			currentOffset = 4;
-			break;
-		case TextureData::LoadFormat_RGFLOAT16:
-			texFormat = DXGI_FORMAT_R16G16_FLOAT;
-			currentOffset = 4;
-			break;
-		case TextureData::LoadFormat_BC7:
-			texFormat = DXGI_FORMAT_BC7_UNORM;
-			bcCompress = true;
-			currentOffset = 1;
-			break;
-		case TextureData::LoadFormat_BC6H:
-			texFormat = DXGI_FORMAT_BC6H_UF16;
-			bcCompress = true;
-			currentOffset = 1;
-			break;
-		}
+		TextureFormat_LoadData loadData = Texture_GetFormat(loadFormat);
 		if (type == TextureDimension::Tex3D)
 		{
 			UINT curWidth = width;
@@ -187,9 +203,9 @@ public:
 					i,
 					curWidth, curHeight,
 					arraySize,
-					texFormat, currentOffset
+					loadData.format , loadData.pixelSize, barrier
 				);
-				UINT chunkOffset = currentOffset * curWidth * curHeight;
+				UINT chunkOffset = loadData.pixelSize * curWidth * curHeight;
 				offset += Max<uint>(chunkOffset, 512);
 				curWidth /= 2;
 				curHeight /= 2;
@@ -203,10 +219,10 @@ public:
 				UINT curWidth = width;
 				UINT curHeight = height;
 
-				
+
 				for (UINT i = 0; i < mip; ++i)
 				{
-					if (bcCompress)
+					if (loadData.bcCompress)
 					{
 						Graphics::CopyBufferToBC5Texture(
 							commandList,
@@ -216,7 +232,7 @@ public:
 							(j * mip) + i,
 							curWidth, curHeight,
 							1,
-							texFormat, currentOffset
+							loadData.format, loadData.pixelSize, barrier
 						);
 					}
 					else
@@ -229,10 +245,10 @@ public:
 							(j * mip) + i,
 							curWidth, curHeight,
 							1,
-							texFormat, currentOffset
+							loadData.format, loadData.pixelSize, barrier
 						);
 					}
-					UINT chunkOffset = currentOffset * curWidth * curHeight;
+					UINT chunkOffset = loadData.pixelSize * curWidth * curHeight;
 					offset += Max<uint>(chunkOffset, 512);
 					curWidth /= 2;
 					curHeight /= 2;
@@ -261,33 +277,8 @@ Texture::Texture(
 	dimension = textureType;
 	if (textureType == TextureDimension::Cubemap)
 		depth = 6;
-	switch (format)
-	{
-	case TextureData::LoadFormat_RGBA8:
-		mFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case TextureData::LoadFormat_RGBA16:
-		mFormat = DXGI_FORMAT_R16G16B16A16_UNORM;
-		break;
-	case TextureData::LoadFormat_RGBAFloat16:
-		mFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		break;
-	case TextureData::LoadFormat_RGBAFloat32:
-		mFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		break;
-	case TextureData::LoadFormat_RG16:
-		mFormat = DXGI_FORMAT_R16G16_UNORM;
-		break;
-	case TextureData::LoadFormat_RGFLOAT16:
-		mFormat = DXGI_FORMAT_R16G16_FLOAT;
-		break;
-	case TextureData::LoadFormat_BC7:
-		mFormat = DXGI_FORMAT_BC7_UNORM;
-		break;
-	case TextureData::LoadFormat_BC6H:
-		mFormat = DXGI_FORMAT_BC6H_UF16;
-		break;
-	}
+	auto loadData = Texture_GetFormat(format);
+	mFormat = loadData.format;
 	this->depthSlice = depth;
 	this->mWidth = width;
 	this->mHeight = height;
@@ -337,7 +328,9 @@ Texture::Texture(
 		mipCount,
 		depth,
 		dimension);
-	cmd(device, commandList, resource);
+	TransitionBarrierBuffer barrierBuffer;
+	cmd(device, commandList, resource, &barrierBuffer);
+	barrierBuffer.ExecuteCommand(commandList);
 
 	BindSRVToHeap(World::GetInstance()->GetGlobalDescHeap(), GetGlobalDescIndex(), device);
 }
@@ -346,49 +339,28 @@ Texture::Texture(
 	ID3D12Device* device,
 	const std::string& filePath,
 	TextureDimension type,
+	uint32_t maximumLoadMipmap,
+	uint32_t startMipMap,
 	TextureHeap* placedHeap,
 	size_t placedOffset
 ) : ITexture()
 {
+	maximumLoadMipmap = Max<uint32_t>(maximumLoadMipmap + startMipMap, startMipMap + 1);
 	dimension = type;
 	TextureData data;//TODO : Read From Texture
 	ZeroMemory(&data, sizeof(TextureData));
 
 	std::vector<char> dataResults;
-	ReadData(filePath, data, dataResults);
+	ReadData(filePath, data, dataResults, startMipMap, maximumLoadMipmap);
 	if (data.textureType != type)
 		throw "Texture Type Not Match Exception";
 
 	if (type == TextureDimension::Cubemap && data.depth != 6)
 		throw "Cubemap's tex size must be 6";
-	switch (data.format)
-	{
-	case TextureData::LoadFormat_RGBA8:
-		mFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case TextureData::LoadFormat_RGBA16:
-		mFormat = DXGI_FORMAT_R16G16B16A16_UNORM;
-		break;
-	case TextureData::LoadFormat_RGBAFloat16:
-		mFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		break;
-	case TextureData::LoadFormat_RGBAFloat32:
-		mFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		break;
-	case TextureData::LoadFormat_RG16:
-		mFormat = DXGI_FORMAT_R16G16_UNORM;
-		break;
-	case TextureData::LoadFormat_RGFLOAT16:
-		mFormat = DXGI_FORMAT_R16G16_FLOAT;
-		break;
-	case TextureData::LoadFormat_BC7:
-		mFormat = DXGI_FORMAT_BC7_UNORM;
-		break;
-	case TextureData::LoadFormat_BC6H:
-		mFormat = DXGI_FORMAT_BC6H_UF16;
-		break;
-	}
+	auto loadData = Texture_GetFormat(data.format);
+	mFormat = loadData.format;
 	data.mipCount = Max<uint>(1, data.mipCount);
+	data.mipCount -= startMipMap;
 	this->depthSlice = data.depth;
 	this->mWidth = data.width;
 	this->mHeight;
@@ -437,7 +409,7 @@ Texture::Texture(
 		data.format,
 		data.width,
 		data.height,
-		data.mipCount,
+		texDesc.MipLevels,
 		data.depth,
 		data.textureType);
 	RenderCommand::AddCommand(cmd);

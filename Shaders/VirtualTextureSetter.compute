@@ -1,0 +1,103 @@
+#include "Include/Sampler.cginc"
+#define MAXIMUM_MIP_LEVELS 3
+cbuffer IndirectParams : register(b0)
+{
+    uint4 _Var; //XY: start Z: size W: result
+    uint2 _IndirectTexelSize;
+};
+cbuffer CombineParams : register(b1)
+{
+    uint2 _TexelSize;
+};
+cbuffer SetBufferParams : register(b2)
+{
+    uint _TaskCount;
+}
+RWTexture2D<uint4> _IndirectTex : register(u0, space0);
+RWTexture2D<float4> _CombineResultTex : register(u1, space0);
+RWTexture2D<float4> _TexMipLevels[MAXIMUM_MIP_LEVELS] : register(u0, space1);
+Texture2D<float4> _CombineTex[4] : register(t0, space1);
+
+RWStructuredBuffer<int> _TextureIndexBuffer : register(u2, space0);
+StructuredBuffer<int2> _SettingCommand : register(t0, space2);
+
+[numthreads(8, 8, 1)]
+void IndirectSet(uint2 id : SV_DISPATCHTHREADID)
+{
+    if(id.x >= _Var.z || id.y >= _Var.z) return;
+    uint2 inputPixel = id.xy + _Var.xy;
+    inputPixel %= _IndirectTexelSize;
+    _IndirectTex[inputPixel] = uint4
+    (
+        float2(((float2)id) / ((float)_Var.z)) * 65535,
+        float(1.0 / _Var.z) * 65535,
+        _Var.w
+    );
+}
+
+float4 ReadFromTexel(uint2 id)
+{
+    uint2 border = (id >= _TexelSize);
+    id -= _TexelSize * border;
+    uint texIndex = border.y * 2 + border.x;
+    return _CombineTex[texIndex][id];
+}
+
+[numthreads(16, 16, 1)]
+void Combine(uint2 id : SV_DISPATCHTHREADID)
+{
+    uint2 twiceID = id * 2;
+    _CombineResultTex[id] = 
+    ReadFromTexel(twiceID) * 0.25 + 
+    ReadFromTexel(twiceID + uint2(0, 1)) * 0.25 + 
+    ReadFromTexel(twiceID + uint2(1, 0)) * 0.25 + 
+    ReadFromTexel(twiceID + 1) * 0.25;
+}
+
+[numthreads(32,32,1)]
+void GenerateMip(uint2 id : SV_GROUPID, uint2 groupID : SV_GROUPTHREADID)
+{
+    uint mipLevel = 0;
+    uint2 dispatchID = 0;
+    uint2 avaliable = 32;
+    bool stillEnabled = true;
+    [unroll]
+    for(uint i = 1; i < MAXIMUM_MIP_LEVELS; ++i)
+    {
+        [branch]
+        if(stillEnabled){
+            dispatchID = id * avaliable + groupID;
+            _TexMipLevels[mipLevel + 1][dispatchID] =( 
+            _TexMipLevels[mipLevel][dispatchID * 2] + _TexMipLevels[mipLevel][dispatchID * 2 + uint2(0, 1)] +
+            _TexMipLevels[mipLevel][dispatchID * 2 + uint2(1, 0)] + _TexMipLevels[mipLevel][dispatchID * 2 + uint2(1, 1)]) * 0.25;
+            mipLevel++;
+            avaliable /= 2;
+            if(groupID.x >= avaliable.x || groupID.y >= avaliable.y) stillEnabled = false;
+        }
+        AllMemoryBarrierWithGroupSync();
+    }
+}
+
+
+[numthreads(8,8,1)]
+void ClearIndirect(uint2 id : SV_DISPATCHTHREADID)
+{
+    if(id.x >= _TexelSize.x || id.y >= _TexelSize.y) return;
+    _IndirectTex[id] = uint4(0,0,65535,0);
+}
+
+
+[numthreads(64, 1, 1)]
+void ClearBuffer(uint id : SV_DISPATCHTHREADID)
+{
+    if(id >= _TaskCount) return;
+    _TextureIndexBuffer[id] = -1;
+}
+
+[numthreads(64, 1, 1)]
+void SetBuffer(uint id : SV_DISPATCHTHREADID)
+{
+    if(id >= _TaskCount) return;
+    int2 command = _SettingCommand[id];
+    _TextureIndexBuffer[command.x] = command.y;
+}

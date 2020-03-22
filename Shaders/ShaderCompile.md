@@ -10,3 +10,5 @@ compute ExposureHistorgram.compute ExposureHistorgram.prop
 shader Bloom.hlsl Bloom.prop
 compute LightCull.compute LightCull.prop
 shader PreintBaker.hlsl PreintBaker.prop
+shader TerrainMainShader.hlsl TerrainMainShader.prop
+compute VirtualTextureSetter.compute VirtualTextureSetter.prop

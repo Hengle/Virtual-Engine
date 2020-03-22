@@ -3,9 +3,9 @@
 #include "../Singleton/ShaderID.h"
 #include "../LogicComponent/Transform.h"
 #include "UploadBuffer.h"
+#include "../LogicComponent/World.h"
 using namespace DirectX;
 
-std::vector<std::pair<MeshRenderer*, MeshRenderer::MeshRendererObjectData>> MeshRenderer::allRendererData;
 MeshRenderer::MeshRenderer(
 	const ObjectPtr<Transform>& trans,
 	ObjectPtr<Component>& getPtr,
@@ -18,16 +18,6 @@ MeshRenderer::MeshRenderer(
 	data.boundingCenter = mesh->boundingCenter;
 	data.boundingExtent = mesh->boundingExtent;
 	data.localToWorld = trans->GetLocalToWorldMatrix();
-	listIndex = allRendererData.size();
-	allRendererData.emplace_back<MeshRenderer*, MeshRenderer::MeshRendererObjectData>(this, std::move(data));
-}
-
-MeshRenderer::~MeshRenderer()
-{
-	auto&& ite = allRendererData.end() - 1;
-	allRendererData[listIndex] = *ite;
-	ite->first->listIndex = listIndex;
-	allRendererData.erase(ite);
 }
 
 void MeshRenderer::Draw(
@@ -46,7 +36,7 @@ void MeshRenderer::Draw(
 	desc.shaderPtr = mShader;
 	ID3D12PipelineState* pso = container->GetState(desc, device, 0);
 	commandList->SetPipelineState(pso);
-	mShader->BindRootSignature(commandList);
+	
 	mShader->SetResource(commandList, ShaderID::GetPerCameraBufferID(), cameraBuffer->buffer, cameraBuffer->element);
 	mShader->SetResource(commandList, ShaderID::GetPerObjectBufferID(), objectBuffer, objectBufferOffset);
 	commandList->IASetVertexBuffers(0, 1, &mesh->VertexBufferView());

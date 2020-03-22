@@ -164,7 +164,7 @@ Shader::Shader(
 
 	if (compileJob)
 	{
-		compileJob->GetTask<ShaderCompile>(ShaderCompile(passCount, passes, &allPasses), nullptr, 0);
+		compileJob->GetTask<ShaderCompile>(nullptr, 0,ShaderCompile(passCount, passes, &allPasses));
 	}
 	else {
 		for (int i = 0; i < passCount; ++i)
@@ -322,7 +322,7 @@ bool Shader::TryGetShaderVariable(UINT id, ShaderVariable& targetVar)
 
 void Shader::SetStructuredBufferByAddress(ID3D12GraphicsCommandList* commandList, UINT id, D3D12_GPU_VIRTUAL_ADDRESS address)
 {
-	auto&& ite = mVariablesDict.find(id);
+	auto ite = mVariablesDict.find(id);
 	if (ite == mVariablesDict.end()) return;
 	UINT rootSigPos = ite->second;
 	commandList->SetGraphicsRootShaderResourceView(

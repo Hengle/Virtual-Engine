@@ -15,10 +15,10 @@ void LoadShader(const std::string& name, ID3D12Device* device, JobBucket* bucket
 	Shader* sh = (Shader*)malloc(sizeof(Shader));
 	if (bucket)
 	{
-		bucket->GetTask([=]()->void
+		bucket->GetTask(nullptr, 0, [=]()->void
 			{
 				new (sh)Shader(device, path);
-			}, nullptr, 0);
+			});
 	}
 	else
 		new (sh)Shader(device, path);
@@ -30,10 +30,10 @@ void LoadComputeShader(const std::string& name, ID3D12Device* device, JobBucket*
 	ComputeShader* sh = (ComputeShader*)malloc(sizeof(ComputeShader));
 	if (bucket)
 	{
-		bucket->GetTask([=]()->void
+		bucket->GetTask(nullptr, 0, [=]()->void
 			{
 				new (sh)ComputeShader(path, device);
-			}, nullptr, 0);
+			});
 	}
 	else
 		new (sh)ComputeShader(path, device);

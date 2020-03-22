@@ -205,7 +205,7 @@ public:
 			postShader,
 			0
 		);
-		transitionBarrier->AddCommand(blitSource->GetReadState(), blitSource->GetWriteState(), blitSource->GetResource());
+	//	transitionBarrier->AddCommand(blitSource->GetReadState(), blitSource->GetWriteState(), blitSource->GetResource());
 		if (isForPresent) {
 			transitionBarrier->AddCommand(
 				D3D12_RESOURCE_STATE_RENDER_TARGET,

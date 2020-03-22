@@ -46,6 +46,12 @@ public:
 	{
 		StackObject<RenderTexture> down;
 		StackObject<RenderTexture> up;
+		Level(const Level& l)
+		{
+			down.New(*l.down);
+			up.New(*l.up);
+		}
+		Level() {}
 	};
 	struct CBufferParams
 	{
@@ -265,7 +271,7 @@ public:
 			transitionBuffer->ExecuteCommand(commandList);
 			Graphics::Blit(
 				commandList, device,
-				&mipDown->GetColorDescriptor(0), 1,
+				&mipDown->GetColorDescriptor(0, 0), 1,
 				nullptr, bloomPSO, 0, mipDown->GetWidth(), mipDown->GetHeight(), bloomShader, pass);
 			transitionBuffer->AddCommand(mipDown->GetWriteState(), mipDown->GetReadState(), mipDown->GetResource());
 			lastDown = mipDown;
@@ -295,7 +301,7 @@ public:
 			transitionBuffer->ExecuteCommand(commandList);
 			Graphics::Blit(
 				commandList, device,
-				&mipUp->GetColorDescriptor(0), 1, nullptr,
+				&mipUp->GetColorDescriptor(0, 0), 1, nullptr,
 				bloomPSO, 0,
 				mipUp->GetWidth(), mipUp->GetHeight(),
 				bloomShader, 4 + qualityOffset);

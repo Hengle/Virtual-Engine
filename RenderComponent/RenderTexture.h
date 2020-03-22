@@ -41,6 +41,21 @@ struct RenderTextureFormat
 		DXGI_FORMAT colorFormat;
 		RenderTextureDepthSettings depthFormat;
 	};
+	static RenderTextureFormat GetColorFormat(DXGI_FORMAT format)
+	{
+		RenderTextureFormat f;
+		f.usage = RenderTextureUsage::ColorBuffer;
+		f.colorFormat = format;
+		return f;
+	}
+
+	static RenderTextureFormat GetDepthFormat(RenderTextureDepthSettings depthFormat)
+	{
+		RenderTextureFormat f;
+		f.usage = RenderTextureUsage::DepthBuffer;
+		f.depthFormat = depthFormat;
+		return f;
+	}
 };
 
 struct RenderTextureDescriptor
@@ -91,6 +106,25 @@ private:
 	void GetColorViewDesc(D3D12_SHADER_RESOURCE_VIEW_DESC& srvDesc);
 	void GetColorUAVDesc(D3D12_UNORDERED_ACCESS_VIEW_DESC& uavDesc, UINT targetMipLevel);
 public:
+	static constexpr D3D12_RESOURCE_STATES GetState(RenderTextureState state)
+	{
+		switch (state)
+		{
+		case RenderTextureState::Render_Target:
+			return D3D12_RESOURCE_STATE_RENDER_TARGET;
+			break;
+		case RenderTextureState::Generic_Read:
+			return D3D12_RESOURCE_STATE_GENERIC_READ;
+			break;
+		case RenderTextureState::Unordered_Access:
+			return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			break;
+		default:
+			return D3D12_RESOURCE_STATE_COMMON;
+		}
+	}
+
+
 	static size_t GetSizeFromProperty(
 		ID3D12Device* device,
 		UINT width,
@@ -125,11 +159,11 @@ public:
 		return readState;
 	}
 	RenderTextureUsage GetUsage() const { return usage; }
-	void BindRTVToHeap(DescriptorHeap* targetHeap, UINT index, ID3D12Device* device, UINT slice);
+	void BindRTVToHeap(DescriptorHeap* targetHeap, UINT index, ID3D12Device* device, UINT slice, UINT mip);
 	void SetViewport(ID3D12GraphicsCommandList* commandList);
-	D3D12_CPU_DESCRIPTOR_HANDLE GetColorDescriptor(UINT slice);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetColorDescriptor(UINT slice, UINT mip);
 	virtual void BindSRVToHeap(DescriptorHeap* targetHeap, UINT index, ID3D12Device* device);
 	void BindUAVToHeap(DescriptorHeap* targetHeap, UINT index, ID3D12Device* device, UINT targetMipLevel);
-	void ClearRenderTarget(ID3D12GraphicsCommandList* commandList, UINT slice, uint defaultDepth = 0, uint defaultStencil = 0);
+	void ClearRenderTarget(ID3D12GraphicsCommandList* commandList, UINT slice, UINT mip, uint defaultDepth = 0, uint defaultStencil = 0);
 };
 

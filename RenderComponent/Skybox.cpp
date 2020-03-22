@@ -29,7 +29,7 @@ void Skybox::Draw(
 	ID3D12PipelineState* pso = container->GetState(desc, device, containerIndex);
 	commandList->SetPipelineState(pso);
 	shader->BindRootSignature(commandList, World::GetInstance()->GetGlobalDescHeap());
-	shader->SetResource(commandList, ShaderID::GetMainTex(), World::GetInstance()->GetGlobalDescHeap(), descHeapIndex);
+	shader->SetResource(commandList, ShaderID::GetMainTex(), World::GetInstance()->GetGlobalDescHeap(), skyboxTex->GetGlobalDescIndex());
 	shader->SetResource(commandList, SkyboxCBufferID, cameraBuffer->buffer, cameraBuffer->element);
 	commandList->IASetVertexBuffers(0, 1, &fullScreenMesh->VertexBufferView());
 	commandList->IASetIndexBuffer(&fullScreenMesh->IndexBufferView());
@@ -41,7 +41,6 @@ Skybox::~Skybox()
 {
 	fullScreenMesh = nullptr;
 	skyboxTex = nullptr;
-	World::GetInstance()->ReturnDescHeapIndexToPool(descHeapIndex);
 }
 
 Skybox::Skybox(
@@ -51,8 +50,6 @@ Skybox::Skybox(
 {
 	World* world = World::GetInstance();
 	SkyboxCBufferID = ShaderID::PropertyToID("SkyboxBuffer");
-	descHeapIndex = world->GetDescHeapIndexFromPool();
-	tex->BindSRVToHeap(world->GetGlobalDescHeap(), descHeapIndex, device);
 	ObjectPtr<UploadBuffer> noProperty = nullptr;
 	shader = ShaderCompiler::GetShader("Skybox");
 	if (fullScreenMesh == nullptr) {

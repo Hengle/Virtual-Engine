@@ -18,10 +18,8 @@ public:
 		DirectX::XMFLOAT3 boundingCenter;
 		DirectX::XMFLOAT3 boundingExtent;
 	};
-	static std::vector<std::pair<MeshRenderer*, MeshRendererObjectData>> allRendererData;
-	virtual ~MeshRenderer();
+
 	ObjectPtr<Mesh> mesh;
-	UINT listIndex;
 	Shader* mShader;
 	MeshRenderer(
 		const ObjectPtr<Transform>& trans,

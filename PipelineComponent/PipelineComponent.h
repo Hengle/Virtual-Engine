@@ -120,7 +120,7 @@ public:
 	template <typename Func>
 	JobHandle ScheduleJob(const Func& func)
 	{
-		JobHandle handle = bucket->GetTask(func, dependingNodes.data(), dependingNodes.size());
+		JobHandle handle = bucket->GetTask(dependingNodes.data(), dependingNodes.size(), func);
 		jobHandles.push_back(handle);
 		return handle;
 	}

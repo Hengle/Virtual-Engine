@@ -26,9 +26,6 @@
 #include <sstream>
 #include <cassert>
 #include "d3dx12.h"
-#include "MathHelper.h"
-#include "DXMath/DXMath.h"
-
 typedef DirectX::XMFLOAT2 float2;
 typedef DirectX::XMFLOAT3 float3;
 typedef DirectX::XMFLOAT4 float4;
@@ -38,11 +35,15 @@ typedef DirectX::XMUINT4 uint4;
 typedef DirectX::XMINT2 int2;
 typedef DirectX::XMINT3 int3;
 typedef DirectX::XMINT4 int4;
-typedef UINT uint;
+typedef uint32_t uint;
 typedef DirectX::XMFLOAT4X4 float4x4;
 typedef DirectX::XMFLOAT3X3 float3x3;
 typedef DirectX::XMFLOAT3X4 float3x4;
 typedef DirectX::XMFLOAT4X3 float4x3;
+#include "MathHelper.h"
+#include "DXMath/DXMath.h"
+
+
 
 extern const int gNumFrameResources;
 enum ResourceReadWriteState : bool
