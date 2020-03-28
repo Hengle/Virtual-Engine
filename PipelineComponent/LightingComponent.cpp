@@ -69,7 +69,7 @@ void LightingComponent::Initialize(ID3D12Device* device, ID3D12GraphicsCommandLi
 }
 void LightingComponent::Dispose()
 {
-	sunTrans.Destroy();
+	Transform::DisposeTransform(sunTrans);
 	DirectionalLight::DestroyLight();
 	xyPlaneTexture.Delete();
 	zPlaneTexture.Delete();

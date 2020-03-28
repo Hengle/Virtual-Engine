@@ -58,7 +58,8 @@ Scene::~Scene()
 {
 	for (auto ite = loadedTransforms.begin(); ite != loadedTransforms.end(); ++ite)
 	{
-		delete *ite;
+		(*ite)->Dispose();
+		ite->Destroy();
 	}
 }
 

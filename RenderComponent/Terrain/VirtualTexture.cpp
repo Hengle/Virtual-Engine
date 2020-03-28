@@ -122,17 +122,20 @@ void VirtualTexture::SetTextureProperty(
 	targetShader->SetResource(commandList, propIDs._VirtualTex, World::GetInstance()->GetGlobalDescHeap(), 0);
 }
 
+
 VirtualTexture::VirtualTexture(
 	ID3D12Device* device,
 	uint indirectSize,
 	uint chunkSize,
 	DXGI_FORMAT* formats,
 	uint formatCount,
-	uint chunkCount) : 
+	uint chunkCount) :
 	indirectSize(indirectSize),
 	textureCapacity(chunkCount),
-	texelSize(chunkSize)
+	texelSize(chunkSize),
+	mapFormats(formatCount)
 {
+	memcpy(mapFormats.data(), formats, sizeof(DXGI_FORMAT) * formatCount);
 	propIDs.Init();
 	psoContainer.New(DXGI_FORMAT_UNKNOWN, formatCount, formats);
 	settingShader = ShaderCompiler::GetComputeShader("VirtualTextureSetter");
@@ -149,7 +152,7 @@ VirtualTexture::VirtualTexture(
 	//computeDescHeap.New(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, DESC_HEAP_COUNT * frameResourceCount, true);
 	for (uint i = 0; i < formatCount; ++i)
 	{
-		fullSize += RenderTexture::GetSizeFromProperty(
+		size_t textureSize = RenderTexture::GetSizeFromProperty(
 			device,
 			chunkSize,
 			chunkSize,
@@ -157,7 +160,8 @@ VirtualTexture::VirtualTexture(
 			TextureDimension::Tex2D,
 			1,
 			VIRTUAL_TEXTURE_MIP_MAXLEVEL,
-			RenderTextureState::Generic_Read) * chunkCount;
+			RenderTextureState::Generic_Read);
+		fullSize += textureSize * chunkCount;
 	}
 	texHeap.New(device, fullSize);
 	size_t offsetCounter = 0;
@@ -235,19 +239,7 @@ VirtualTexture::TextureBlock::~TextureBlock()
 
 VirtualTexture::~VirtualTexture()
 {
-	for (auto ite = FrameResource::mFrameResources.begin(); ite != FrameResource::mFrameResources.end(); ++ite)
-	{
-		if (*ite)
-		{
-			(*ite)->DisposeResource(this);
-		}
-	}
-	textureIndexBuffer.Delete();
-	psoContainer.Delete();
-	indirectTex.Delete();
-	texHeap.Delete();
-	cbufferPool.Delete();
-	renderConstDataBuffer.Delete();
+	FrameResource::DisposeResources(this);
 }
 bool VirtualTexture::InternalCreate(uint2 index, uint size, VirtualChunk& result)
 {
@@ -527,11 +519,6 @@ void VirtualTexture::ExecuteUpdate(
 			}
 			barrierBuffer->ExecuteCommand(commandList);
 			settingShader->Dispatch(commandList, 0, dispatchCount, dispatchCount, 1);
-			if (indirectCurrentState != indirectTex->GetReadState())
-			{
-				barrierBuffer->AddCommand(indirectCurrentState, indirectTex->GetReadState(), indirectTex->GetResource());
-				indirectCurrentState = indirectTex->GetReadState();
-			}
 		}
 		break;
 		case VTUpdateCommand::UpdateCommandType_Combine:
@@ -570,11 +557,11 @@ void VirtualTexture::ExecuteUpdate(
 				{
 					rt->BindUAVToHeap(frameData->mipHeap, mipDescCurrentIndex++, device, i);
 				}
-				barrierBuffer->AddCommand(rt->GetReadState(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, rt->GetResource());
+				barrierBuffer->AddCommand(rt->GetReadState(), RenderTexture::GetState(RenderTextureState::Unordered_Access), rt->GetResource());
 				barrierBuffer->ExecuteCommand(commandList);
 				const uint dispatchCount = texelSize / 32;
 				settingShader->Dispatch(commandList, 2, dispatchCount, dispatchCount, 1);
-				barrierBuffer->AddCommand(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, rt->GetReadState(), rt->GetResource());
+				barrierBuffer->AddCommand(RenderTexture::GetState(RenderTextureState::Unordered_Access), rt->GetReadState(), rt->GetResource());
 			}
 		}
 		break;

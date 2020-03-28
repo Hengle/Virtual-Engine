@@ -146,7 +146,7 @@ struct PrepareRunnable
 			(float)randomComp.GetRangedFloat(1e-4, 1),
 			(float)randomComp.GetRangedFloat(1e-4, 1)
 		};
-		ConstBufferElement ele = resource->cameraCBs[camera->GetInstanceID()];
+		ConstBufferElement ele = resource->cameraCBs[camera];
 		ele.buffer->CopyData(ele.element, &ths->passConstants);
 		//Calculate Frustum Planes
 		Matrix4 localToWorldMatrix;

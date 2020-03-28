@@ -13,14 +13,18 @@ using namespace neb;
 AssetReference::AssetReference(
 	AssetLoadType loadType,
 	const std::string& guid,
-	Runnable<void(MObject*)> mainThreadFinishFunctor,
+	Runnable<void(const ObjectPtr<MObject>&)> mainThreadFinishFunctor,
 	bool isLoad) :
 	loadType(loadType),
 	mainThreadFinishFunctor(mainThreadFinishFunctor),
 	guid(guid),
 	isLoad(isLoad)
 {
-	AssetDatabase::GetInstance()->GetPath(guid, path);
+	if (!AssetDatabase::GetInstance()->GetPath(guid, path))
+	{
+		throw "Reference Not Found!";
+	}
+
 }
 
 void AssetReference::Unload()
@@ -46,21 +50,22 @@ ObjectPtr<MObject> AssetReference::SyncLoad(
 				AssetDatabase::GetInstance()->AddLoadedObjects(guid, obj);
 				obj->AddEventBeforeDispose([=](MObject* obj)->void
 					{
-						AssetDatabase::GetInstance()->RemoveLoadedObjects(guid);
+						auto ptr = AssetDatabase::GetInstance();
+						if (ptr)
+							ptr->RemoveLoadedObjects(guid);
 					});
 			}
 		}
 	}
 	return obj;
 }
-
 ObjectPtr<MObject> AssetReference::LoadObject(AssetLoadType loadType, ID3D12Device* device, const std::string& path, const std::string& guid)
 {
 	ObjectPtr<MObject> obj;
 	switch (loadType)
 	{
 	case AssetLoadType::Mesh:
-		obj = ObjectPtr<Mesh>::MakePtr(Mesh::LoadMeshFromFile(path, device, true, true, true, false, true, true, true, false)).CastTo<MObject>();
+		obj = ObjectPtr<Mesh>::MakePtr(Mesh::LoadMeshFromFile(path, device, true, true, true, false, true, true, false, false)).CastTo<MObject>();
 		break;
 	case AssetLoadType::Texture2D:
 		obj = ObjectPtr<Texture>::MakePtr(new Texture(device, path, TextureDimension::Tex2D)).CastTo<MObject>();
@@ -102,12 +107,13 @@ ObjectPtr<MObject> AssetReference::LoadObject(AssetLoadType loadType, ID3D12Devi
 	}
 	break;
 	}
+	
 	return obj;
 }
 
 void AssetReference::Load(
 	ID3D12Device* device,
-	std::vector<std::pair<Runnable<void(MObject*)>, ObjectPtr<MObject>>>& mainThreadCallList)
+	std::vector<std::pair<Runnable<void(const ObjectPtr<MObject>&)>, ObjectPtr<MObject>>>& mainThreadCallList)
 {
 	ObjectPtr<MObject> obj = AssetDatabase::GetInstance()->GetLoadedObject(guid);
 	if (obj)
@@ -120,7 +126,7 @@ void AssetReference::Load(
 	else
 	{
 
-		obj = ObjectPtr<MObject>::MakePtr(LoadObject(loadType, device, path, guid));
+		obj = LoadObject(loadType, device, path, guid);
 		AssetDatabase::GetInstance()->AddLoadedObjects(guid, obj);
 		obj->AddEventBeforeDispose([=](MObject* obj)->void
 			{

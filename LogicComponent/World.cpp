@@ -9,6 +9,7 @@
 #include "Transform.h"
 #include "../CJsonObject/CJsonObject.hpp"
 #include "../Common/Input.h"
+#include "../Singleton/MeshLayout.h"
 #include "../RenderComponent/Texture.h"
 #include "../RenderComponent/MeshRenderer.h"
 #include "../RenderComponent/PBRMaterial.h"
@@ -18,6 +19,9 @@
 #include "../JobSystem/JobInclude.h"
 #include "CameraMove.h"
 #include "Terrain/TerrainMainLogic.h"
+#include "../ResourceManagement/AssetDatabase.h"
+#include "../ResourceManagement/AssetReference.h"
+#include "../RenderComponent/Terrain/VirtualTextureData.h"
 using namespace Math;
 using namespace neb;
 World* World::current = nullptr;
@@ -25,12 +29,14 @@ void BuildShapeGeometry(GeometryGenerator::MeshData& box, ObjectPtr<Mesh>& bMesh
 namespace WorldTester
 {
 	ObjectPtr<Mesh> mesh;
-	ObjectPtr<Transform> testObj;
+//	ObjectPtr<Transform> testObj;
 	ObjectPtr<PBRMaterial> pbrMat;
 	ObjectPtr<ITexture> testTex;
 	ObjectPtr<Camera> mainCamera;
+	std::unique_ptr<VirtualTextureData> texData;
 	StackObject<CameraMove> camMove;
 	std::unique_ptr<TerrainMainLogic> terrainMainLogic;
+	ObjectPtr<Scene> testScene;
 }
 using namespace WorldTester;
 
@@ -40,14 +46,13 @@ World::World(ID3D12GraphicsCommandList* commandList, ID3D12Device* device) :
 	globalDescriptorHeap(ObjectPtr<DescriptorHeap>::MakePtr(new DescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAXIMUM_HEAP_COUNT, true))),
 	allTransformsPtr(500)
 {
-	
+
 	allCameras.reserve(10);
 	current = this;
 	mainCamera = ObjectPtr< Camera>::MakePtr(new Camera(device, Camera::CameraRenderPath::DefaultPipeline));
 	allCameras.push_back(mainCamera);
 	camMove.New(mainCamera);
-	testObj = Transform::GetTransform();
-	testObj->SetPosition(Vector3(10, 5, 10));
+	//testObj = Transform::GetTransform();
 	//testObj->SetRotation(Vector4(-0.113517, 0.5999342, 0.6212156, 0.4912069));
 #pragma loop(hint_parallel(0))
 	for (UINT i = 0; i < MAXIMUM_HEAP_COUNT; ++i)
@@ -58,13 +63,12 @@ World::World(ID3D12GraphicsCommandList* commandList, ID3D12Device* device) :
 	//meshRenderer = new MeshRenderer(trans.operator->(), device, mesh, ShaderCompiler::GetShader("OpaqueStandard"));
 
 	GeometryGenerator geoGen;
-	/*mesh = ObjectPtr<Mesh>::MakePtr(Mesh::LoadMeshFromFile("Resource/Wheel.vmesh", device,
-		true, true, true, false, true, true, true, false));
-	*/
+	mesh = ObjectPtr<Mesh>::MakePtr(Mesh::LoadMeshFromFile("Resource/Wheel.vmesh", device,
+		true, true, true, false, true, true, false, false));
+	
 	if (!mesh)
 	{
-		BuildShapeGeometry(geoGen.CreateBox(1,1,1, 1), mesh, device, commandList, nullptr);
-		mesh->boundingExtent = { -0.5f, -0.5f, -0.5f };
+		BuildShapeGeometry(geoGen.CreateBox(1, 1, 1, 1), mesh, device, commandList, nullptr);
 	}
 	{
 		Storage<CJsonObject, 1> jsonObjStorage;
@@ -83,22 +87,36 @@ World::World(ID3D12GraphicsCommandList* commandList, ID3D12Device* device) :
 			pbrMat = ObjectPtr<PBRMaterial>::MakePtr(new PBRMaterial(device, grpMaterialManager, CJsonObject("")));
 		}
 	}
-	uint v = pbrMat->GetMaterialIndex();
 	grpRenderer = new GRPRenderManager(
-		mesh->GetLayoutIndex(),
+		//mesh->GetLayoutIndex(),
+		MeshLayout::GetMeshLayoutIndex(true, true, false, true, true, false, false, false),
 		256,
 		ShaderCompiler::GetShader("OpaqueStandard"),
 		device
-	);
-	DXGI_FORMAT vtFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-	virtualTexture = ObjectPtr<VirtualTexture>::MakePtr(new VirtualTexture(device, 1024, 768, &vtFormat, 1, 158));
-/*	grpRenderer->AddRenderElement(
+		);
+	DXGI_FORMAT vtFormat[2] =
+	{
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		DXGI_FORMAT_R8G8B8A8_UNORM
+	};
+	std::string res = "Resource";
+	texData = std::unique_ptr<VirtualTextureData>(new VirtualTextureData(device, res, "TestData.inf"));
+	virtualTexture = ObjectPtr<VirtualTexture>::MakePtr(new VirtualTexture(device, 1024, 768, vtFormat, 2, 157));
+	/*grpRenderer->AddRenderElement(
 		testObj, mesh, device, 0, pbrMat->GetMaterialIndex()
-	);*/
+		);*/
 	terrainDrawer = ObjectPtr<TerrainDrawer>::MakePtr(
 		new TerrainDrawer(device, uint2(1024, 1024), 1)
-	);
-	terrainMainLogic = std::unique_ptr<TerrainMainLogic>(new TerrainMainLogic(virtualTexture));
+		);
+
+	terrainMainLogic = std::unique_ptr<TerrainMainLogic>(new TerrainMainLogic(device, virtualTexture, texData.get()));
+	
+	Runnable<void(const ObjectPtr<MObject>&)> sceneFunc = [&](const ObjectPtr<MObject>& value)->void
+	{
+		testScene = value.CastTo<Scene>();
+	};
+	AssetReference ref(AssetLoadType::Scene, "Scene_SampleScene", sceneFunc, true);
+	AssetDatabase::GetInstance()->AsyncLoad(ref);
 }
 
 UINT World::GetDescHeapIndexFromPool()
@@ -115,7 +133,7 @@ World::~World()
 {
 	for (uint i = 0; i < allTransformsPtr.Length(); ++i)
 	{
-		allTransformsPtr[i].Destroy();
+		Transform::DisposeTransform(allTransformsPtr[i]);
 	}
 	pbrMat.Destroy();
 	testTex.Destroy();
@@ -153,7 +171,6 @@ void World::Update(FrameResource* resource, ID3D12Device* device, GameTimer& tim
 {
 	camMove->Run(timer.DeltaTime());
 	mainCamera->SetLens(0.333333 * MathHelper::Pi, (float)screenSize.x / (float)screenSize.y, 0.3, 2000);
-	grpRenderer->UpdateFrame(resource, device);
 	if (!testTex)
 	{
 		testTex = ObjectPtr<ITexture>::MakePtr(new Texture(device, "Resource/testTex.vtex", TextureDimension::Tex2D, 20, 0));
@@ -161,8 +178,11 @@ void World::Update(FrameResource* resource, ID3D12Device* device, GameTimer& tim
 		pbrMat->UpdateMaterialToBuffer();
 
 	}
-	terrainMainLogic->UpdateCameraData(mainCamera);
-	
+	terrainMainLogic->UpdateCameraData(mainCamera, resource, device);
+	if (Input::IsKeyDown(KeyCode::Space))
+	{
+		if (testScene) testScene.Destroy();
+	}
 	windowInfo = std::to_wstring(virtualTexture->GetLeftedChunkSize());
 }
 
@@ -201,6 +221,6 @@ void BuildShapeGeometry(GeometryGenerator::MeshData& box, ObjectPtr<Mesh>& bMesh
 		DXGI_FORMAT_R16_UINT,
 		indices.size(),
 		indices.data()
-	));
+		));
 
 }

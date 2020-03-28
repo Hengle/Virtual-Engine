@@ -31,8 +31,6 @@ struct ShadowmapData
 	Vector4 position;
 	float size;
 };
-
-
 void GetCascadeShadowmapMatrices(
 	const Vector3& sunRight,
 	const Vector3& sunUp,
@@ -49,11 +47,7 @@ void GetCascadeShadowmapMatrices(
 	Vector4* lastPositions,
 	uint* shadowResolutions)
 {
-	Matrix4 cameraLocalToWorld = GetTransformMatrix(
-		cameraRight,
-		cameraUp,
-		cameraForward,
-		cameraPosition);
+	
 	Matrix4 sunLocalToWorld = transpose(GetTransformMatrix(
 		sunRight,
 		sunUp,
@@ -65,10 +59,13 @@ void GetCascadeShadowmapMatrices(
 	Vector3* lastCorners = corners;
 	Vector3* nextCorners = corners + 4;
 	MathLib::GetCameraNearPlanePoints(
-		std::move((Matrix4&)cameraLocalToWorld),
+		cameraRight,
+		cameraUp,
+		cameraForward,
+		cameraPosition,
 		fov,
 		aspect, distances[0], nextCorners);
-	for (uint i = 0; i < distanceCount - 1; ++i)
+	for (uint i = 0; i < distanceCount; ++i)
 	{
 		{
 			Vector3* swaper = lastCorners;
@@ -76,7 +73,10 @@ void GetCascadeShadowmapMatrices(
 			nextCorners = swaper;
 		}
 		MathLib::GetCameraNearPlanePoints(
-			std::move((Matrix4&)cameraLocalToWorld),
+			cameraRight,
+			cameraUp,
+			cameraForward,
+			cameraPosition,
 			fov,
 			aspect, distances[i + 1], nextCorners);
 		float farDist = distance(nextCorners[0], nextCorners[3]);
@@ -86,16 +86,12 @@ void GetCascadeShadowmapMatrices(
 		Matrix4 sunWorldToLocal = inverse(sunLocalToWorld);
 		Vector4 minBoundingPoint, maxBoundingPoint;
 		{
-			Vector4& c = (Vector4&)corners[0];
-			c.SetW(1);
-			minBoundingPoint = mul(sunWorldToLocal, c);
+			minBoundingPoint = mul(sunWorldToLocal, Vector4(corners[0], 1));
 			maxBoundingPoint = minBoundingPoint;
 		}
 		for (uint j = 1; j < 8; ++j)
 		{
-			Vector4& c = (Vector4&)corners[j];
-			c.SetW(1);
-			Vector4 pointLocalPos = mul(sunWorldToLocal, c);
+			Vector4 pointLocalPos = mul(sunWorldToLocal, Vector4(corners[j], 1));
 			minBoundingPoint = Min(pointLocalPos, minBoundingPoint);
 			maxBoundingPoint = Max(pointLocalPos, maxBoundingPoint);
 		}
@@ -108,13 +104,11 @@ void GetCascadeShadowmapMatrices(
 		localPosition.SetW(1);
 		Vector3 position = mul(sunLocalToWorld, localPosition);
 		lastPositions[i] = localPosition;
-		//TODO
-		//Chess Board Transformation
-		Matrix4 viewMat = GetInverseTransformMatrix(
+		Matrix4 viewMat = inverse(GetTransformMatrix(
 			sunRight,
 			sunUp,
 			sunForward,
-			position);
+			position));
 		results[i] =
 		{
 			mul(viewMat, projMatrix),
@@ -184,7 +178,7 @@ public:
 				cam->GetFovY(),
 				cam->GetAspect(),
 				dist,
-				DirectionalLight::CascadeLevel + 1,
+				DirectionalLight::CascadeLevel,
 				vpMatrices,
 				lastLightData->sunPositions,
 				shadowReses);
@@ -202,10 +196,10 @@ public:
 				dLight->shadowDistance[3]
 			};
 			cb._ShadowmapIndices = {
-				dLight->GetDescriptorIndices(0),
-				dLight->GetDescriptorIndices(1),
-				dLight->GetDescriptorIndices(2),
-				dLight->GetDescriptorIndices(3)
+				dLight->GetShadowmap(0)->GetGlobalDescIndex(),
+				dLight->GetShadowmap(1)->GetGlobalDescIndex(),
+				dLight->GetShadowmap(2)->GetGlobalDescIndex(),
+				dLight->GetShadowmap(3)->GetGlobalDescIndex()
 			};
 			cb._ShadowSoftValue =
 			{
@@ -274,6 +268,7 @@ public:
 					0,
 					false);
 				tCmd->GetBarrierBuffer()->ExecuteCommand(commandList);
+				auto v = i + DirectionalLight::CascadeLevel * frameIndex;
 				world->GetGRPRenderManager()->DrawCommand(
 					commandList,
 					device,

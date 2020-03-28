@@ -31,19 +31,19 @@ Transform::Transform(const CJsonObject& jsonObj, ObjectPtr<Transform>& targetPtr
 	if (jsonObj.Get("position", s))
 	{
 		float3 pos;
-		ReadStringToVector<float3, 3>(s.data(), s.length(), &pos);
+		ReadStringToVector<float3>(s.data(), s.length(), &pos);
 		SetPosition(pos);
 	}
 	if (jsonObj.Get("rotation", s))
 	{
 		float4 rot;
-		ReadStringToVector<float4, 4>(s.data(), s.length(), &rot);
+		ReadStringToVector<float4>(s.data(), s.length(), &rot);
 		SetRotation(rot);
 	}
 	if (jsonObj.Get("localscale", s))
 	{
 		float3 scale;
-		ReadStringToVector<float3, 3>(s.data(), s.length(), &scale);
+		ReadStringToVector<float3>(s.data(), s.length(), &scale);
 		SetLocalScale(scale);
 	}
 }
@@ -70,7 +70,7 @@ Transform::Transform(ObjectPtr<Transform>& ptr)
 			{0,0,0}
 		},
 		&vectorPos
-	);
+		);
 }
 
 ObjectPtr<Transform> Transform::GetTransform()
@@ -112,23 +112,38 @@ Math::Matrix4 Transform::GetWorldToLocalMatrix()
 {
 	TransformData& data = randVec[vectorPos];
 	return GetInverseTransformMatrix(
-		(Math::Vector3)data.right * data.localScale.x,
+	(Math::Vector3)data.right * data.localScale.x,
 		(Math::Vector3)data.up * data.localScale.y,
 		(Math::Vector3)data.forward * data.localScale.z,
 		data.position);
 }
 
-Transform::~Transform()
+void Transform::Dispose()
 {
 	for (uint i = 0; i < allComponents.Length(); ++i)
 	{
-		allComponents[i]->transform = nullptr;
-		allComponents[i].Destroy();
+		if (allComponents[i])
+		{
+			allComponents[i].Destroy();
+		}
 	}
+	allComponents.Clear();
+}
+
+Transform::~Transform()
+{
+	if (allComponents.Length() > 0)
+		throw "Components Not Disposed!";
 	World* world = World::GetInstance();
 	if (world && worldIndex >= 0)
 	{
 		std::lock_guard<std::mutex> lck(world->mtx);
 		world->allTransformsPtr.Remove(worldIndex);
 	}
+}
+
+void Transform::DisposeTransform(ObjectPtr<Transform>& trans)
+{
+	trans->Dispose();
+	trans.Destroy();
 }

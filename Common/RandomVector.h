@@ -73,7 +73,7 @@ public:
 		if (index >= size) throw "Index Out of Range!";
 		return arr[index].first;
 #endif
-}
+	}
 	void Add(const T& value, uint* indexFlagPtr)
 	{
 		Resize(size + 1);
@@ -86,9 +86,12 @@ public:
 	{
 		if (targetIndex >= size) throw "Index Out of Range!";
 		size--;
-		arr[targetIndex] = arr[size];
-		*arr[targetIndex].second = targetIndex;
+		if (targetIndex != size) {
+			arr[targetIndex] = arr[size];
+			*arr[targetIndex].second = targetIndex;
+		}
 		arr[size].~pair<T, uint*>();
+
 	}
 
 	~RandomVector()

@@ -180,6 +180,7 @@ public:
 	{
 		return ObjectPtr<T>(ptr);
 	}
+	static ObjectPtr<T> MakePtr(ObjectPtr<T>) noexcept = delete;
 
 
 	inline constexpr operator bool() const noexcept

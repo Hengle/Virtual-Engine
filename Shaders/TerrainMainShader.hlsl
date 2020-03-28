@@ -1,5 +1,5 @@
 #include "Include/Sampler.cginc"
-#define VT_COUNT 1
+#define VT_COUNT 2
 struct VTIndices
 {
     int indices[VT_COUNT];
@@ -14,7 +14,7 @@ struct ObjectData
 	float2 worldScale;
 	uint2 uvIndex;
 };
-Texture2D<float4> _VirtualTex[100] : register(t0, space0);
+Texture2D<float4> _VirtualTex[2] : register(t0, space0);
 Texture2D<uint4> _IndirectTex : register(t0, space1);
 StructuredBuffer<VTIndices> _IndirectBuffer : register(t1, space1);
 StructuredBuffer<ObjectData> _ObjectDataBuffer : register(t2, space1);
@@ -104,8 +104,8 @@ void PS(VertexOut i,
    motionVectorTex = screenUV - lastScreenUV;
    float2 uv = i.uv.xy;
  //  emissionRT = float4(0.1 * (i.vtIndex + uv), 0.5, 1);
-    emissionRT = float4(GetVirtualTextureDebugUV(i.vtIndex, uv, _IndirectTexelSize), 0.5, 1);
-   //emissionRT = SampleTrilinear(chunk, fracUV, _ChunkTexelSize, _MaxMipLevel, _IndirectTexelSize).results[0];
+   // emissionRT = float4(GetVirtualTextureDebugUV(i.vtIndex, uv, _IndirectTexelSize), 0.5, 1);
+   emissionRT = SampleTrilinear(i.vtIndex, uv, _ChunkTexelSize, _MaxMipLevel, _IndirectTexelSize).results[0];
    //emissionRT = 0.5;
    albedo = emissionRT;
 }

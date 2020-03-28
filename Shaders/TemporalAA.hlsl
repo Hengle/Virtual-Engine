@@ -327,6 +327,6 @@ float4 frag(v2f i) : SV_TARGET
         float4 TemporalColor = lerp(CurrColor, PrevColor, HistoryWeight);
         TemporalColor.xyz = TonemapInvert(TemporalColor.xyz);
         TemporalColor.w = depthAdaptiveForce;
-        TemporalColor = KillNaN(TemporalColor);
+        TemporalColor = clamp(KillNaN(TemporalColor), 0, 60000);
         return TemporalColor;
 }

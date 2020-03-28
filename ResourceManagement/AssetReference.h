@@ -15,7 +15,7 @@ enum class AssetLoadType : uint
 class AssetReference
 {
 private:
-	Runnable<void(MObject*)> mainThreadFinishFunctor;
+	Runnable<void(const ObjectPtr<MObject>&)> mainThreadFinishFunctor;
 	AssetLoadType loadType;
 	std::string path;
 	std::string guid;
@@ -26,7 +26,7 @@ public:
 	AssetReference(
 		AssetLoadType loadType,
 		const std::string& guid,
-		Runnable<void(MObject*)> mainThreadFinishFunctor,
+		Runnable<void(const ObjectPtr<MObject>&)> mainThreadFinishFunctor,
 		bool isLoad);
 	static ObjectPtr<MObject> SyncLoad(
 		ID3D12Device* device,
@@ -34,6 +34,6 @@ public:
 		AssetLoadType loadType);
 	void Load(
 		ID3D12Device* device,
-		std::vector<std::pair<Runnable<void(MObject*)>, ObjectPtr<MObject>>>& mainThreadCallList);
+		std::vector<std::pair<Runnable<void(const ObjectPtr<MObject>&)>, ObjectPtr<MObject>>>& mainThreadCallList);
 	void Unload();
 };

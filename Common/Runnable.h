@@ -1,7 +1,7 @@
 #pragma once
 template <class T>
 class Runnable;
-#define RUNNABLE_FUNC_SIZE 128
+#define RUNNABLE_FUNC_SIZE 64
 template<class _Ret,
 	class... _Types>
 	class Runnable<_Ret(_Types...)>

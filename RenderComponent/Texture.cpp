@@ -149,6 +149,7 @@ private:
 	UINT mip;
 	UINT arraySize;
 	TextureDimension type;
+	bool* flag;
 public:
 	TextureLoadCommand(ID3D12Device* device,
 		UINT element,
@@ -159,9 +160,9 @@ public:
 		UINT height,
 		UINT mip,
 		UINT arraySize,
-		TextureDimension type) :
+		TextureDimension type, bool* flag) :
 		res(res), loadFormat(loadFormat), width(width), height(height), mip(mip), arraySize(arraySize), type(type),
-		ubuffer(device, (element + 8191) & ~8191, false, 1)
+		ubuffer(device, (element + 2047) & ~2047, false, 1), flag(flag)
 	{
 		ubuffer.CopyDatas(0, element, dataPtr);
 	}
@@ -174,8 +175,10 @@ public:
 		UINT height,
 		UINT mip,
 		UINT arraySize,
-		TextureDimension type
-	) :res(res), loadFormat(loadFormat), width(width), height(height), mip(mip), arraySize(arraySize), type(type), ubuffer(buffer)
+		TextureDimension type, bool* flag
+	) :res(res), loadFormat(loadFormat), 
+		width(width), height(height), mip(mip), arraySize(arraySize), type(type), ubuffer(buffer),
+		flag(flag)
 	{
 
 	}
@@ -257,6 +260,7 @@ public:
 		}
 		size_t ofst = offset;
 		size_t size = ubuffer.GetElementCount();
+		*flag = true;
 	}
 };
 
@@ -327,11 +331,10 @@ Texture::Texture(
 		height,
 		mipCount,
 		depth,
-		dimension);
+		dimension, &loaded);
 	TransitionBarrierBuffer barrierBuffer;
 	cmd(device, commandList, resource, &barrierBuffer);
 	barrierBuffer.ExecuteCommand(commandList);
-
 	BindSRVToHeap(World::GetInstance()->GetGlobalDescHeap(), GetGlobalDescIndex(), device);
 }
 
@@ -411,9 +414,8 @@ Texture::Texture(
 		data.height,
 		texDesc.MipLevels,
 		data.depth,
-		data.textureType);
+		data.textureType, &loaded);
 	RenderCommand::AddCommand(cmd);
-
 	BindSRVToHeap(World::GetInstance()->GetGlobalDescHeap(), GetGlobalDescIndex(), device);
 }
 void Texture::GetResourceViewDescriptor(D3D12_SHADER_RESOURCE_VIEW_DESC& srvDesc)

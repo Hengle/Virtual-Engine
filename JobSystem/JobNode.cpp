@@ -1,13 +1,10 @@
 #include "JobNode.h"
 #include "JobBucket.h"
-#include "VectorPool.h"
 JobNode::~JobNode()
 {
-	if (destructorFunc != nullptr)
-		destructorFunc(ptr);
-	if(dependingEvent && vectorPool)
-	dependingEvent->clear();
-	vectorPool->Delete(dependingEvent);
+	Dispose();
+	if (dependedEventInitialized)
+		dependingEvent.Delete();
 }
 
 JobNode* JobNode::Execute(ConcurrentQueue<JobNode*>& taskList, std::condition_variable& cv)
@@ -15,7 +12,7 @@ JobNode* JobNode::Execute(ConcurrentQueue<JobNode*>& taskList, std::condition_va
 	executeFunc(ptr);
 	std::vector<JobNode*>::iterator ite = dependingEvent->begin();
 	JobNode* nextNode = nullptr;
-	while(ite != dependingEvent->end())
+	while (ite != dependingEvent->end())
 	{
 		JobNode* node = *ite;
 		unsigned int dependingCount = --node->targetDepending;
@@ -59,3 +56,40 @@ void JobNode::Precede(JobNode* depending)
 	}
 }
 */
+
+
+void JobNode::Create(const FunctorData& funcData, void* funcPtr, std::mutex* threadMtx, JobHandle* dependedJobs, uint dependCount)
+{
+	targetDepending = dependCount;
+	this->threadMtx = threadMtx;
+	ptr = &stackArr;
+	funcData.constructor(ptr, funcPtr);
+	destructorFunc = funcData.disposer;
+	executeFunc = funcData.run;
+	for (uint i = 0; i < dependCount; ++i)
+	{
+		dependedJobs[i].node->dependingEvent->push_back(this);
+	}
+}
+
+void JobNode::Reset()
+{
+	if (!dependedEventInitialized)
+	{
+		dependedEventInitialized = true;
+		dependingEvent.New();
+		dependingEvent->reserve(8);
+	}
+}
+void JobNode::Dispose()
+{
+	if (destructorFunc != nullptr)
+	{
+		destructorFunc(ptr);
+		destructorFunc = nullptr;
+	}
+	if (dependedEventInitialized)
+	{
+		dependingEvent->clear();
+	}
+}

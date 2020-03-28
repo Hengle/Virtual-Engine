@@ -110,6 +110,7 @@ public:
 	void operator()()
 	{
 		tcmd->ResetCommand();
+		TransitionBarrierBuffer* barrierBuffer = tcmd->GetBarrierBuffer();
 		ID3D12GraphicsCommandList* commandList = tcmd->GetCmdList();
 		DepthCameraResource* cameraRes = (DepthCameraResource*)cam->GetResource(component, [=]()->DepthCameraResource*
 		{
@@ -147,7 +148,7 @@ public:
 			device,
 			1,
 			ShaderID::GetPerCameraBufferID(),
-			resource->cameraCBs[cam->GetInstanceID()],
+			resource->cameraCBs[cam],
 			component->depthPrepassContainer, 0
 		);
 		//Generate HIZ Depth
@@ -159,17 +160,9 @@ public:
 		hizGenerator->BindRootSignature(commandList, &cameraRes->hizHeap);
 		hizGenerator->SetResource(commandList, _DepthTexture, &cameraRes->hizHeap, DepthCameraResource::descHeapSize * frameIndex);
 		hizGenerator->SetResource(commandList, _CameraDepthTexture, &cameraRes->hizHeap, 10 + DepthCameraResource::descHeapSize * frameIndex);
-		std::pair< D3D12_RESOURCE_STATES, D3D12_RESOURCE_STATES> states[2] =
-		{
-		{depthRT->GetWriteState(), depthRT->GetReadState()},
-		{cameraRes->hizTexture->GetReadState(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS}
-		};
-		ID3D12Resource* resources[2] =
-		{
-			depthRT->GetResource(),
-			cameraRes->hizTexture->GetResource()
-		};
-		Graphics::MultiResourceStateTransform<2>(commandList, states, resources);
+		barrierBuffer->AddCommand(depthRT->GetWriteState(), depthRT->GetReadState(), depthRT->GetResource());
+		barrierBuffer->AddCommand(cameraRes->hizTexture->GetReadState(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, cameraRes->hizTexture->GetResource());
+		barrierBuffer->ExecuteCommand(commandList);
 		//TODO
 		hizGenerator->Dispatch(commandList, 2, hizResolution.x / 8, hizResolution.y / 8, 1);
 		Graphics::UAVBarrier(commandList, cameraRes->hizTexture->GetResource());
@@ -177,13 +170,8 @@ public:
 		Graphics::UAVBarrier(commandList, cameraRes->hizTexture->GetResource());
 		hizGenerator->Dispatch(commandList, 1, 1, 1, 1);
 		//Dispatch
-		for (uint i = 0; i < 2; ++i)
-		{
-			auto a = states[i].first;
-			states[i].first = states[i].second;
-			states[i].second = a;
-		}
-		Graphics::MultiResourceStateTransform<2>(commandList, states, resources);
+		barrierBuffer->AddCommand(depthRT->GetReadState(), depthRT->GetWriteState(), depthRT->GetResource());
+		barrierBuffer->AddCommand(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, cameraRes->hizTexture->GetReadState(), cameraRes->hizTexture->GetResource());
 
 		tcmd->CloseCommand();
 	}

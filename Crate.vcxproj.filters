@@ -117,9 +117,6 @@
     <ClCompile Include="LogicComponent\DirectionalLight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CJsonObject\cJSON.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CJsonObject\CJsonObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -210,18 +207,6 @@
     <ClCompile Include="VEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JobSystem\JobBucket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JobSystem\JobHandle.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JobSystem\JobNode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JobSystem\JobSystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RenderComponent\Terrain\VirtualTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -235,6 +220,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LogicComponent\Utility\IEnumerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderComponent\Terrain\VirtualTextureData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderComponent\TransitionBarrierBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CJsonObject\cJSON.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JobSystem\JobBucket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JobSystem\JobHandle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JobSystem\JobNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JobSystem\JobSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -539,9 +545,6 @@
     <ClInclude Include="JobSystem\JobSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JobSystem\VectorPool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="IRendererBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -561,6 +564,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Common\TypeWiper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderComponent\Terrain\VirtualTextureData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderComponent\Terrain\RandomTexGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

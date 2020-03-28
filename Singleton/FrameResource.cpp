@@ -49,12 +49,14 @@ void FrameResource::WaitForLastFrameResource(UINT64 fenceCount, ID3D12CommandQue
 
 void FrameResource::OnLoadCamera(Camera* targetCamera, ID3D12Device* device)
 {
+	std::lock_guard<std::mutex> lck(mtx);
 	perCameraDatas[targetCamera] = perCameraDataMemPool.New();
 	ConstBufferElement constBuffer = cameraCBufferPool.Get(device);
-	cameraCBs[targetCamera->GetInstanceID()] = constBuffer;
+	cameraCBs[targetCamera] = constBuffer;
 }
 void FrameResource::OnUnloadCamera(Camera* targetCamera)
 {
+	std::lock_guard<std::mutex> lck(mtx);
 	FrameResCamera* data = perCameraDatas[targetCamera];
 	for (auto ite = data->graphicsThreadCommands.begin(); ite != data->graphicsThreadCommands.end(); ++ite)
 	{
@@ -65,9 +67,9 @@ void FrameResource::OnUnloadCamera(Camera* targetCamera)
 		threadCommandMemoryPool.Delete(*ite);
 	}
 	perCameraDatas.erase(targetCamera);
-	ConstBufferElement& constBuffer = cameraCBs[targetCamera->GetInstanceID()];
+	ConstBufferElement& constBuffer = cameraCBs[targetCamera];
 	cameraCBufferPool.Return(constBuffer);
-	cameraCBs.erase(targetCamera->GetInstanceID());
+	cameraCBs.erase(targetCamera);
 	perCameraDataMemPool.Delete(data);
 }
 
@@ -101,7 +103,7 @@ ThreadCommand* FrameResource::GetNewThreadCommand(Camera* cam, ID3D12Device* dev
 	}
 	else
 	{
-		auto&& ite = threadCommands->end() - 1;
+		auto ite = threadCommands->end() - 1;
 		ThreadCommand* result = *ite;
 		threadCommands->erase(ite);
 		return result;
@@ -140,4 +142,38 @@ FrameResource::~FrameResource()
 		}
 	}
 	delete commmonThreadCommand;
+}
+
+void FrameResource::DisposeResource(void* targetComponent)
+{
+	std::lock_guard<std::mutex> lck(mtx);
+	auto ite = perFrameResource.find(targetComponent);
+	if (ite == perFrameResource.end()) return;
+	delete ite->second;
+	perFrameResource.erase(ite);
+}
+
+void FrameResource::DisposePerCameraResource(void* targetComponent, Camera* cam)
+{
+	std::lock_guard<std::mutex> lck(mtx);
+	FrameResCamera* ptr = perCameraDatas[cam];
+	auto ite = ptr->perCameraResource.find(targetComponent);
+	if (ite == ptr->perCameraResource.end()) return;
+	delete ite->second;
+	ptr->perCameraResource.erase(ite);
+}
+
+void FrameResource::DisposeResources(void* targetComponent)
+{
+	for (auto ite = mFrameResources.begin(); ite != mFrameResources.end(); ++ite)
+	{
+		if (*ite) (*ite)->DisposeResource(targetComponent);
+	}
+}
+void FrameResource::DisposePerCameraResources(void* targetComponent, Camera* cam)
+{
+	for (auto ite = mFrameResources.begin(); ite != mFrameResources.end(); ++ite)
+	{
+		if (*ite) (*ite)->DisposePerCameraResource(targetComponent, cam);
+	}
 }

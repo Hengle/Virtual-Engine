@@ -156,9 +156,11 @@ private:
 
 bool ReadJson(const std::string& filePath, neb::CJsonObject* placementMemory);
 float GetFloatFromChar(char* c, size_t t);
-template <typename T, size_t floatNum>
+int GetIntFromChar(char* c, size_t t);
+template <typename T>
 void ReadStringToVector(char* cPtr, size_t t, T* vec)
 {
+    const size_t floatNum = sizeof(T) / sizeof(float);
 	float* vecPointer = (float*)vec;
 	size_t count = 0;
 	size_t floatOffset = 0;
@@ -181,5 +183,33 @@ void ReadStringToVector(char* cPtr, size_t t, T* vec)
 	}
 	if (floatOffset >= floatNum) return;
 	vecPointer[floatOffset] = GetFloatFromChar(start, count);
+}
+
+template <typename T>
+void ReadStringToIntVector(char* cPtr, size_t t, T* vec)
+{
+    const size_t intNum = sizeof(T) / sizeof(int);
+    int* vecPointer = (int*)vec;
+    size_t count = 0;
+    size_t floatOffset = 0;
+    char* start = cPtr;
+    for (size_t i = 0; i < t; ++i)
+    {
+        char c = cPtr[i];
+        if (c == ',')
+        {
+            if (floatOffset >= intNum) return;
+            vecPointer[floatOffset] = GetIntFromChar(start, count);
+            start = cPtr + i + 1;
+            count = 0;
+            floatOffset++;
+        }
+        else
+        {
+            count++;
+        }
+    }
+    if (floatOffset >= intNum) return;
+    vecPointer[floatOffset] = GetIntFromChar(start, count);
 }
 #endif /* CJSONHELPER_HPP_ */

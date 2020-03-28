@@ -14,6 +14,7 @@ class Mesh : public MObject
 	DXGI_FORMAT indexFormat;
 	UINT indexCount;
 	void* indexArrayPtr;
+	void ReleaseAfterFlush();
 public:
 	ID3D12Resource* GetResource() const
 	{
@@ -42,6 +43,8 @@ public:
 		UINT indexCount,
 		void* indexArrayPtr
 	);
+	~Mesh();
+	
 	static Mesh* LoadMeshFromFile(const std::string& str, ID3D12Device* device,
 		bool positions,
 		bool normals,

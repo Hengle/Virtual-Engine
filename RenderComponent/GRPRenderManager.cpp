@@ -22,6 +22,13 @@ struct ObjectData
 	DirectX::XMUINT2 id;
 };
 
+struct ObjectCullData
+{
+	DirectX::XMFLOAT4X4 localToWorld;
+	DirectX::XMFLOAT3 boundingCenter;
+	DirectX::XMFLOAT3 boundingExtent;
+};
+
 struct Command
 {
 	enum CommandType
@@ -55,9 +62,9 @@ public:
 	GpuDrivenRenderer(
 		ID3D12Device* device,
 		UINT capacity
-	) : capacity(capacity), count(0),
+		) : capacity(capacity), count(0),
 		objectPool(sizeof(ObjectConstants), capacity),
-		objectPosBuffer(new UploadBuffer(device, capacity, false, sizeof(ObjectData))),
+		objectPosBuffer(new UploadBuffer(device, capacity, false, sizeof(ObjectCullData))),
 		cmdDrawBuffers(new UploadBuffer(device, capacity, false, sizeof(MultiDrawCommand)))
 	{
 		allocatedObjects.reserve(capacity);
@@ -71,7 +78,7 @@ public:
 		if (targetCapacity <= capacity) return;
 		UINT autoCapac = (UINT)(capacity * 1.5);
 		targetCapacity = Max<UINT>(targetCapacity, autoCapac);
-		UploadBuffer* newObjBuffer = new UploadBuffer(device, targetCapacity, false, sizeof(ObjectData));
+		UploadBuffer* newObjBuffer = new UploadBuffer(device, targetCapacity, false, sizeof(ObjectCullData));
 		UploadBuffer* newCmdDrawBuffer = new UploadBuffer(device, targetCapacity, false, sizeof(MultiDrawCommand));
 		newObjBuffer->CopyFrom(objectPosBuffer.get(), 0, 0, capacity);
 		newCmdDrawBuffer->CopyFrom(cmdDrawBuffers.get(), 0, 0, capacity);
@@ -89,7 +96,7 @@ public:
 
 	void UpdateFrame(
 		ID3D12Device* device
-	)
+		)
 	{
 		for (UINT i = 0; ; ++i)
 		{
@@ -166,7 +173,7 @@ GRPRenderManager::GRPRenderManager(
 	UINT initCapacity,
 	Shader* shader,
 	ID3D12Device* device
-) :
+	) :
 	capacity(initCapacity),
 	shader(shader),
 	cmdSig(shader, device),
@@ -185,7 +192,7 @@ GRPRenderManager::GRPRenderManager(
 		ele,
 		_countof(ele),
 		true
-	));
+		));
 	ele[0].elementCount = 4;
 	ele[0].stride = sizeof(uint);
 	dispatchIndirectBuffer = std::unique_ptr<StructuredBuffer>(new StructuredBuffer(
@@ -193,7 +200,7 @@ GRPRenderManager::GRPRenderManager(
 		ele,
 		1,
 		false
-	));
+		));
 
 
 	_InputBuffer = ShaderID::PropertyToID("_InputBuffer");
@@ -210,7 +217,7 @@ GRPRenderManager::RenderElement::RenderElement(
 	const ObjectPtr<Transform>& anotherTrans,
 	DirectX::XMFLOAT3 boundingCenter,
 	DirectX::XMFLOAT3 boundingExtent
-) : transform(anotherTrans), boundingCenter(boundingCenter), boundingExtent(boundingExtent) {}
+	) : transform(anotherTrans), boundingCenter(boundingCenter), boundingExtent(boundingExtent) {}
 
 GRPRenderManager::RenderElement& GRPRenderManager::AddRenderElement(
 	const ObjectPtr<Transform>& targetTrans,
@@ -218,11 +225,11 @@ GRPRenderManager::RenderElement& GRPRenderManager::AddRenderElement(
 	ID3D12Device* device,
 	UINT shaderID,
 	UINT materialID
-)
+	)
 {
 	if (mesh->GetLayoutIndex() != meshLayoutIndex)
 		throw "Mesh Bad Layout!";
-	auto&& ite = dicts.find(targetTrans);
+	auto ite = dicts.find(targetTrans);
 	if (ite != dicts.end())
 	{
 		return elements[ite->second];
@@ -233,7 +240,7 @@ GRPRenderManager::RenderElement& GRPRenderManager::AddRenderElement(
 		targetTrans,
 		mesh->boundingCenter,
 		mesh->boundingExtent
-	);
+		);
 
 	Command cmd;
 	cmd.index = elements.size() - 1;
@@ -249,14 +256,14 @@ GRPRenderManager::RenderElement& GRPRenderManager::AddRenderElement(
 	cmd.objData.boundingCenter = ele.boundingCenter;
 	cmd.objData.boundingExtent = ele.boundingExtent;
 	cmd.objData.id = { shaderID, materialID };
-	DirectX::XMMATRIX* ptr = (DirectX::XMMATRIX*) &cmd.objData.localToWorld;
+	DirectX::XMMATRIX* ptr = (DirectX::XMMATRIX*) & cmd.objData.localToWorld;
 	*ptr = targetTrans->GetLocalToWorldMatrix();
 	for (UINT i = 0, size = FrameResource::mFrameResources.size(); i < size; ++i)
 	{
 		GpuDrivenRenderer* perFrameData = (GpuDrivenRenderer*)FrameResource::mFrameResources[i]->GetResource(this, [=]()->GpuDrivenRenderer*
-		{
-			return new GpuDrivenRenderer(device, capacity);
-		});
+			{
+				return new GpuDrivenRenderer(device, capacity);
+			});
 		perFrameData->AddCommand(cmd);
 	}
 
@@ -265,7 +272,7 @@ GRPRenderManager::RenderElement& GRPRenderManager::AddRenderElement(
 
 void GRPRenderManager::UpdateRenderer(const ObjectPtr<Transform>& targetTrans, Mesh* mesh, ID3D12Device* device)
 {
-	auto&& ite = dicts.find(targetTrans);
+	auto ite = dicts.find(targetTrans);
 	if (ite == dicts.end()) return;
 	RenderElement& rem = elements[ite->second];
 
@@ -283,21 +290,24 @@ void GRPRenderManager::UpdateRenderer(const ObjectPtr<Transform>& targetTrans, M
 	for (UINT i = 0, size = FrameResource::mFrameResources.size(); i < size; ++i)
 	{
 		GpuDrivenRenderer* perFrameData = (GpuDrivenRenderer*)FrameResource::mFrameResources[i]->GetResource(this, [=]()->GpuDrivenRenderer*
-		{
-			return new GpuDrivenRenderer(device, capacity);
-		});
+			{
+				return new GpuDrivenRenderer(device, capacity);
+			});
 		perFrameData->AddCommand(cmd);
 	}
 }
 
 void GRPRenderManager::RemoveElement(const ObjectPtr<Transform>& trans, ID3D12Device* device)
 {
-	auto&& ite = dicts.find(trans);
+	auto ite = dicts.find(trans);
 	if (ite == dicts.end()) return;
 	auto arrEnd = elements.end() - 1;
 	UINT index = ite->second;
-	RenderElement& ele = elements[ite->second];
-	ele = *arrEnd;
+	if (index != elements.size() - 1)
+	{
+		RenderElement& ele = elements[index];
+		ele = *arrEnd;
+	}
 	dicts.insert_or_assign(arrEnd->transform.operator->(), ite->second);
 	elements.erase(arrEnd);
 	dicts.erase(ite);
@@ -308,9 +318,9 @@ void GRPRenderManager::RemoveElement(const ObjectPtr<Transform>& trans, ID3D12De
 	for (UINT i = 0, size = FrameResource::mFrameResources.size(); i < size; ++i)
 	{
 		GpuDrivenRenderer* perFrameData = (GpuDrivenRenderer*)FrameResource::mFrameResources[i]->GetResource(this, [=]()->GpuDrivenRenderer*
-		{
-			return new GpuDrivenRenderer(device, capacity);
-		});
+			{
+				return new GpuDrivenRenderer(device, capacity);
+			});
 		perFrameData->AddCommand(cmd);
 	}
 
@@ -319,9 +329,9 @@ void GRPRenderManager::RemoveElement(const ObjectPtr<Transform>& trans, ID3D12De
 void GRPRenderManager::UpdateFrame(FrameResource* resource, ID3D12Device* device)
 {
 	GpuDrivenRenderer* perFrameData = (GpuDrivenRenderer*)resource->GetResource(this, [=]()->GpuDrivenRenderer*
-	{
-		return new GpuDrivenRenderer(device, capacity);
-	});
+		{
+			return new GpuDrivenRenderer(device, capacity);
+		});
 	perFrameData->UpdateFrame(device);
 }
 
@@ -331,7 +341,7 @@ void GRPRenderManager::UpdateTransform(
 	UINT shaderID,
 	UINT materialID)
 {
-	auto&& ite = dicts.find(targetTrans);
+	auto ite = dicts.find(targetTrans);
 	if (ite == dicts.end()) return;
 	RenderElement& rem = elements[ite->second];
 	Command cmd;
@@ -340,14 +350,14 @@ void GRPRenderManager::UpdateTransform(
 	cmd.objData.boundingCenter = rem.boundingCenter;
 	cmd.objData.boundingExtent = rem.boundingExtent;
 	cmd.objData.id = { shaderID, materialID };
-	DirectX::XMMATRIX* ptr = (DirectX::XMMATRIX*) &cmd.objData.localToWorld;
+	DirectX::XMMATRIX* ptr = (DirectX::XMMATRIX*) & cmd.objData.localToWorld;
 	*ptr = targetTrans->GetLocalToWorldMatrix();
 	for (UINT i = 0, size = FrameResource::mFrameResources.size(); i < size; ++i)
 	{
 		GpuDrivenRenderer* perFrameData = (GpuDrivenRenderer*)FrameResource::mFrameResources[i]->GetResource(this, [=]()->GpuDrivenRenderer*
-		{
-			return new GpuDrivenRenderer(device, capacity);
-		});
+			{
+				return new GpuDrivenRenderer(device, capacity);
+			});
 		perFrameData->AddCommand(cmd);
 	}
 }
@@ -360,10 +370,11 @@ void GRPRenderManager::OcclusionRecheck(
 	const ConstBufferElement& cullDataBuffer,
 	uint hizDepthIndex)
 {
+	if (elements.empty()) return;
 	GpuDrivenRenderer* perFrameData = (GpuDrivenRenderer*)targetResource->GetResource(this, [=]()->GpuDrivenRenderer*
-	{
-		return new GpuDrivenRenderer(device, capacity);
-	});
+		{
+			return new GpuDrivenRenderer(device, capacity);
+		});
 	DescriptorHeap* heap = World::GetInstance()->GetGlobalDescHeap();
 	cullShader->BindRootSignature(commandList, heap);
 	cullShader->SetResource(commandList, _InputBuffer, perFrameData->cmdDrawBuffers.get(), 0);
@@ -378,7 +389,7 @@ void GRPRenderManager::OcclusionRecheck(
 	barrierBuffer.AddCommand(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, dispatchIndirectBuffer->GetResource());
 	barrierBuffer.AddCommand(D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, cullResultBuffer->GetResource());
 	barrierBuffer.ExecuteCommand(commandList);
-	
+
 	cullShader->DispatchIndirect(commandList, 5, dispatchIndirectBuffer.get(), 0, 0);
 	barrierBuffer.AddCommand(D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, dispatchIndirectBuffer->GetResource());
 	barrierBuffer.AddCommand(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, cullResultBuffer->GetResource());
@@ -397,10 +408,10 @@ void GRPRenderManager::Culling(
 	uint hizDepthIndex,
 	bool occlusion)
 {
-
+	if (elements.empty()) return;
 	if (elements.size() > cullResultBuffer->GetElementCount(0))
 	{
-	//	cullResultBuffer->ReleaseResourceAfterFlush(targetResource);
+		//	cullResultBuffer->ReleaseResourceAfterFlush(targetResource);
 		StructuredBufferElement ele[3];
 		ele[0].elementCount = elements.size();
 		ele[0].stride = sizeof(MultiDrawCommand);
@@ -414,15 +425,15 @@ void GRPRenderManager::Culling(
 				ele,
 				_countof(ele),
 				true
-			));
+				));
 
 	}
 	UINT dispatchCount = (63 + elements.size()) / 64;
 	UINT capacity = this->capacity;
 	GpuDrivenRenderer* perFrameData = (GpuDrivenRenderer*)targetResource->GetResource(this, [=]()->GpuDrivenRenderer*
-	{
-		return new GpuDrivenRenderer(device, capacity);
-	});
+		{
+			return new GpuDrivenRenderer(device, capacity);
+		});
 	CullData& cullD = *(CullData*)cullDataBuffer.buffer->GetMappedDataPtr(cullDataBuffer.element);
 	memcpy(cullD.planes, frustumPlanes, sizeof(DirectX::XMFLOAT4) * 6);
 	memcpy(&cullD._FrustumMaxPoint, &frustumMaxPoint, sizeof(DirectX::XMFLOAT3));
@@ -468,8 +479,9 @@ void  GRPRenderManager::DrawCommand(
 	uint cameraPropertyID,
 	const ConstBufferElement& cameraProperty,
 	PSOContainer* container, uint containerIndex
-)
+	)
 {
+	if (elements.empty()) return;
 	PSODescriptor desc;
 	desc.meshLayoutIndex = meshLayoutIndex;
 	desc.shaderPass = targetShaderPass;
@@ -485,7 +497,7 @@ void  GRPRenderManager::DrawCommand(
 		cullResultBuffer->GetAddressOffset(0, 0),
 		cullResultBuffer->GetResource(),
 		cullResultBuffer->GetAddressOffset(1, 0)
-	);
+		);
 
 }
 
@@ -496,9 +508,5 @@ CBufferPool* GRPRenderManager::GetCullDataPool(UINT initCapacity)
 
 GRPRenderManager::~GRPRenderManager()
 {
-	for (UINT i = 0, size = FrameResource::mFrameResources.size(); i < size; ++i)
-	{
-		if (FrameResource::mFrameResources[i])
-			FrameResource::mFrameResources[i]->DisposeResource(this);
-	}
+	FrameResource::DisposeResources(this);
 }

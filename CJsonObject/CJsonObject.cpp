@@ -3540,7 +3540,13 @@ float GetFloatFromChar(char* c, size_t t)
 	float num = 0;
 	float pointer = 0;
 	float rate = 1;
+    float type = 1;
 	size_t i = 0;
+    if (c[i] == '-')
+    {
+        type = -1;
+        i++;
+    }
 	for (; i < t; ++i)
 	{
 		if (c[i] == '.')
@@ -3557,6 +3563,31 @@ float GetFloatFromChar(char* c, size_t t)
 		rate *= 0.1f;
 		pointer += (c[i] - 48) * rate;
 	}
-	return pointer + num;
+	return (pointer + num) * type;
+}
+
+int GetIntFromChar(char* c, size_t t)
+{
+    if (t == 0) return 0;
+    int num = 0;
+    int type = 1;
+    size_t i = 0;
+    if (c[i] == '-')
+    {
+        type = -1;
+        i++;
+    }
+    for (; i < t; ++i)
+    {
+        if (c[i] == '.')
+        {
+            ++i;
+            break;
+        }
+        char n = c[i] - 48;
+        num *= 10;
+        num += n;
+    }
+    return num * type;
 }
 

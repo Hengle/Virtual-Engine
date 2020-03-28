@@ -95,7 +95,14 @@ AssetDatabase::AssetDatabase(ID3D12Device* device)
 	rootJsonObj = (CJsonObject*)&rootJsonObjStorage;
 	if (!ReadJson("Resource/AssetDatabase.json", rootJsonObj))
 	{
+		
 		rootJsonObj = nullptr;
+	}
+	std::string key, value;
+	while (rootJsonObj->GetKey(key))
+	{
+		rootJsonObj->Get(key, value);
+		std::string& v = value;
 	}
 }
 
@@ -117,10 +124,7 @@ ObjectPtr<MObject> AssetDatabase::GetLoadedObject(const std::string& str)
 
 AssetDatabase::~AssetDatabase()
 {
-	for (auto ite = loadedObjects.begin(); ite != loadedObjects.end(); ++ite)
-	{
-		ite->second.Destroy();
-	}
+
 	threadEnabled = false;
 	shouldWaiting = false;
 	{

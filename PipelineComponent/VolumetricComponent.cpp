@@ -105,7 +105,7 @@ struct VolumetricRunnable
 		}
 		froxelShader->SetResource(commandList, FroxelParams, &camData->cbuffer, frameIndex);
 		froxelShader->SetResource(commandList, LightCullCBuffer_ID, &lightData->lightCBuffer, frameIndex);
-		auto constBufferID = res->cameraCBs[cam->GetInstanceID()];
+		auto constBufferID = res->cameraCBs[cam];
 		froxelShader->SetResource(commandList, ShaderID::GetPerCameraBufferID(), constBufferID.buffer, constBufferID.element);
 		froxelShader->SetResource(commandList, _GreyTex, heap, camData->HEAP_SIZE * frameIndex);
 		froxelShader->SetResource(commandList, _VolumeTex, heap, camData->HEAP_SIZE * frameIndex + 8);

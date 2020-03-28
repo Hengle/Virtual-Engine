@@ -277,7 +277,6 @@ bool VEngine::Draw(D3DAppDataPack& pack, GameTimer& timer)
 //	SetCursorPos(mClientWidth / 2, mClientHeight / 2);
 	data.resource->UpdateBeforeFrame(data.fence);//Flush CommandQueue
 	pipelineJobSys->ExecuteBucket(bucketArray.data(), bucketArray.size());					//Execute Tasks
-
 	rp->ExecuteRendering(data);
 	HRESULT presentResult = pack.mSwapChain->Present(0, 0);
 #if defined(DEBUG) | defined(_DEBUG)

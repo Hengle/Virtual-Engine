@@ -93,4 +93,23 @@ public:
 		start++;
 		return true;
 	}
+
+	void TryPop()
+	{
+		if (Length() == 0)
+			return;
+		Element* result = &arr[start % capacity];
+		result->~Element();
+		start++;
+	}
+
+	bool TryGetLast(T* target)
+	{
+
+		if (Length() == 0)
+			return false;
+		Element* result = &arr[start % capacity];
+		*target = result->value;
+		return true;
+	}
 };

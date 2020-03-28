@@ -20,7 +20,7 @@ private:
 	std::unordered_map<std::string, uint> resourceReferenceCount;
 	std::vector<AssetReference> loadList;
 	bool shouldWaiting = false;
-	std::vector<std::pair<Runnable<void(MObject*)>, ObjectPtr<MObject>>> mainThreadRunnable;
+	std::vector<std::pair<Runnable<void(const ObjectPtr<MObject>&)>, ObjectPtr<MObject>>> mainThreadRunnable;
 	std::mutex loadingThreadMtx;
 	std::condition_variable cv;
 	static ID3D12Device* device;

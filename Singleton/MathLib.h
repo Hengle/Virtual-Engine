@@ -9,7 +9,7 @@ struct Cone
 	float height;
 	DirectX::XMFLOAT3 direction;
 	float radius;
-	Cone(DirectX::XMFLOAT3& position, float distance, DirectX::XMFLOAT3& direction, float angle) : 
+	Cone(DirectX::XMFLOAT3& position, float distance, DirectX::XMFLOAT3& direction, float angle) :
 		vertex(position),
 		height(distance),
 		direction(direction)
@@ -40,7 +40,18 @@ public:
 		double aspect,
 		double distance,
 		Math::Vector3* corners
-	);
+		);
+
+	static void GetCameraNearPlanePoints(
+		const Math::Vector3& right,
+		const Math::Vector3& up,
+		const Math::Vector3& forward,
+		const Math::Vector3& position,
+		double fov,
+		double aspect,
+		double distance,
+		Math::Vector3* corners
+		);
 
 	static void GetPerspFrustumPlanes(
 		const Math::Matrix4& localToWorldMatrix,
@@ -49,7 +60,7 @@ public:
 		double nearPlane,
 		double farPlane,
 		DirectX::XMFLOAT4* frustumPlanes
-	);
+		);
 	static void GetPerspFrustumPlanes(
 		const Math::Matrix4& localToWorldMatrix,
 		double fov,
@@ -57,24 +68,24 @@ public:
 		double nearPlane,
 		double farPlane,
 		Math::Vector4* frustumPlanes
-	);
+		);
 	static void GetFrustumBoundingBox(
 		const Math::Matrix4& localToWorldMatrix,
 		double nearWindowHeight,
 		double farWindowHeight,
 		double aspect,
 		double nearZ,
-		double farZ, 
+		double farZ,
 		Math::Vector3* minValue,
 		Math::Vector3* maxValue
-	);
+		);
 
 	static float GetDistanceToPlane(
 		const Math::Vector4& plane,
 		const Math::Vector4& point)
 	{
 		Math::Vector3 dotValue = DirectX::XMVector3Dot(plane, point);
-		return ((DirectX::XMFLOAT4*)&dotValue)->x + ((DirectX::XMFLOAT4*)&point)->w;
+		return ((DirectX::XMFLOAT4*) & dotValue)->x + ((DirectX::XMFLOAT4*) & point)->w;
 	}
 	static bool ConeIntersect(const Cone& cone, const Math::Vector4& plane);
 	static void GetOrthoCamFrustumPlanes(
@@ -102,4 +113,6 @@ public:
 	static double DistanceToQuad(double size, float2 quadToTarget);
 	static bool BoxIntersect(const Math::Vector3& position, const Math::Vector3& extent, Math::Vector4* planes, int len);
 	static bool BoxContactWithBox(double3 min0, double3 max0, double3 min1, double3 max1);
+	static Math::Vector4 CameraSpacePlane(const Math::Matrix4& worldToCameraMatrix, const Math::Vector3& pos, const Math::Vector3& normal, float clipPlaneOffset);
+	static Math::Matrix4 CalculateObliqueMatrix(const Math::Vector4& clipPlane, const Math::Matrix4& projection);
 };

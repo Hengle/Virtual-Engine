@@ -15,7 +15,7 @@ class ITexture : public MObject
 private:
 	uint srvDescID = 0;
 protected:
-	Microsoft::WRL::ComPtr<ID3D12Resource> Resource = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> Resource;
 	DXGI_FORMAT mFormat;
 	UINT depthSlice;
 	UINT mWidth = 0;
@@ -65,4 +65,5 @@ public:
 		return srvDescID;
 	}
 	virtual void BindSRVToHeap(DescriptorHeap* targetHeap, UINT index, ID3D12Device* device) = 0;
+	void ReleaseAfterFrame();
 };

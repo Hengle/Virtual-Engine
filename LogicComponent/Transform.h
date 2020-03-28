@@ -30,6 +30,7 @@ private:
 	UINT vectorPos;
 	Transform(const neb::CJsonObject& path, ObjectPtr<Transform>& targetPtr);
 	Transform(ObjectPtr<Transform>& targetPtr);
+	void Dispose();
 public:
 	uint GetComponentCount() const
 	{
@@ -48,4 +49,5 @@ public:
 	Math::Matrix4 GetLocalToWorldMatrix();
 	Math::Matrix4 GetWorldToLocalMatrix();
 	~Transform();
+	static void DisposeTransform(ObjectPtr<Transform>& trans);
 };

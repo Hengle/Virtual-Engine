@@ -6,10 +6,10 @@
 	#define GBUFFER_SHADER
 	#include "Include/Lighting.cginc"
 	#include "Include/Random.cginc"
-		Texture2D<float4> _MainTex[100] : register(t0, space0);
-		Texture2D<float> _GreyTex[100] : register(t0, space1);
-		Texture2D<uint> _IntegerTex[100] : register(t0, space2);
-		TextureCube<float4> _Cubemap[100] : register(t0, space3);
+		Texture2D<float4> _MainTex[2] : register(t0, space0);
+		Texture2D<float> _GreyTex[2] : register(t0, space1);
+		Texture2D<uint> _IntegerTex[2] : register(t0, space2);
+		TextureCube<float4> _Cubemap[2] : register(t0, space3);
 
 cbuffer Per_Object_Buffer : register(b0)
 {

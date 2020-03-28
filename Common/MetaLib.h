@@ -11,8 +11,11 @@ template <typename T>
 class Storage<T, 0>
 {};
 
+template <typename T, bool autoDispose = false>
+class StackObject;
+
 template <typename T>
-class StackObject
+class StackObject<T, false>
 {
 private:
 	Storage<T, 1> storage;
@@ -58,6 +61,92 @@ public:
 	bool operator==(const StackObject<T>&) const = delete;
 	bool operator!=(const StackObject<T>&) const = delete;
 	StackObject() {}
+};
+
+template <typename T>
+class StackObject<T, true>
+{
+private:
+	StackObject<T, false> stackObj;
+	bool initialized = false;
+public:
+	template <typename... Args>
+	constexpr void New(Args&&... args) noexcept
+	{
+		if (initialized) return;
+		stackObj.New(std::forward<Args>(args)...);
+		initialized = true;
+	}
+	template <typename... Args>
+	constexpr void InPlaceNew(Args&&... args) noexcept
+	{
+		if (initialized) return;
+		stackObj.InPlaceNew(std::forward<Args>(args)...);
+		initialized = true;
+	}
+
+	constexpr operator bool() const noexcept
+	{
+		return initialized;
+	}
+
+	constexpr void Delete() noexcept
+	{
+		if (initialized)
+		{
+			initialized = false;
+			stackObj.Delete();
+		}
+	}
+
+	constexpr void operator=(const StackObject<T, true>& value)
+	{
+		if (initialized)
+		{
+			stackObj.Delete();
+		}
+		initialized = value.initialized;
+		if (initialized)
+		{
+			stackObj = value.stackObj;
+		}
+	}
+	constexpr void operator=(StackObject<T>&& value)
+	{
+		if (initialized)
+		{
+			stackObj.Delete();
+		}
+		initialized = value.initialized;
+		if (initialized)
+		{
+			stackObj = std::move(value.stackObj);
+		}
+	}
+	constexpr T& operator*() const noexcept
+	{
+		return *stackObj;
+	}
+	constexpr T* operator->() const noexcept
+	{
+		return stackObj.operator->();
+	}
+	constexpr T* GetPtr() const noexcept
+	{
+		return stackObj.GetPtr();
+	}
+	constexpr operator T* () const noexcept
+	{
+		return stackObj;
+	}
+	bool operator==(const StackObject<T>&) const = delete;
+	bool operator!=(const StackObject<T>&) const = delete;
+	StackObject() {}
+	~StackObject()
+	{
+		if (initialized)
+			stackObj.Delete();
+	}
 };
 
 template <typename F, unsigned int count>
@@ -129,13 +218,13 @@ public:
 	void Clear();
 };
 template <typename K, typename V>
-void Dictionary<K,V>::Reserve(UINT capacity)
+void Dictionary<K, V>::Reserve(UINT capacity)
 {
 	keyDicts.reserve(capacity);
 	values.reserve(capacity);
 }
 template <typename K, typename V>
-V* Dictionary<K,V>::operator[](K& key)
+V* Dictionary<K, V>::operator[](K& key)
 {
 	auto&& ite = keyDicts.find(key);
 	if (ite == keyDicts.end()) return nullptr;
@@ -163,4 +252,45 @@ void Dictionary<K, V>::Clear()
 {
 	keyDicts.clear();
 	values.clear();
+}
+
+template <typename ... Types>
+struct Tuple;
+
+template<>
+struct Tuple<> {};
+
+template <typename T, typename ... Types>
+struct Tuple<T, Types...> : public Tuple<Types...>
+{
+	T value;
+};
+
+template <size_t index, typename ... Types>
+struct TupleGetter;
+
+template <size_t index, typename T, typename ... Types>
+struct TupleGetter<index, Tuple<T, Types...>>
+{
+	using Type = typename TupleGetter<index - 1, Tuple<Types...>>::Type;
+	inline static typename Type& Get(Tuple<T, Types...>& value);
+};
+
+template <typename T, typename ... Types>
+struct TupleGetter<0, Tuple<T, Types...>>
+{
+	using Type = typename T;
+	inline static T& Get(Tuple<T, Types...>& value);
+};
+
+template <size_t index, typename T, typename ... Types>
+inline typename TupleGetter<index, Tuple<T, Types...>>::Type& TupleGetter<index, Tuple<T, Types...>>::Get(Tuple<T, Types...>& value)
+{
+	return TupleGetter<index - 1, Tuple<Types...>>::Get(value);
+}
+
+template <typename T, typename ... Types>
+inline T& TupleGetter<0, Tuple<T, Types...>>::Get(Tuple<T, Types...>& value)
+{
+	return value.value;
 }

@@ -11,11 +11,12 @@ class Scene : public MObject
 {
 	friend class AssetReference;
 private:
-	std::vector<Transform*> loadedTransforms;
+	std::vector<ObjectPtr<Transform>> loadedTransforms;
 	std::string guid;
 protected:
 	Scene(const std::string& guid, neb::CJsonObject& jsonObj, ID3D12Device* device);
 	virtual ~Scene();
 public:
 	void DestroyScene();
+	
 };

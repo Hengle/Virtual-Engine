@@ -1,5 +1,4 @@
 #pragma once
-#include "VectorPool.h"
 #include "../Common/Pool.h"
 #include "ConcurrentQueue.h"
 #include <atomic>
@@ -15,10 +14,9 @@ class JobSystem
 private:
 
 	std::mutex threadMtx;
-	VectorPool vectorPool;
 	void UpdateNewBucket();
 	int mThreadCount;
-	ConcurrentPool<JobNode> jobNodePool;
+	JobPool<JobNode> jobNodePool;
 	ConcurrentQueue<JobNode*> executingNode;
 	std::vector<std::thread*> allThreads;
 	std::atomic<int> bucketMissionCount;

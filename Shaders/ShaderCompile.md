@@ -12,3 +12,4 @@ compute LightCull.compute LightCull.prop
 shader PreintBaker.hlsl PreintBaker.prop
 shader TerrainMainShader.hlsl TerrainMainShader.prop
 compute VirtualTextureSetter.compute VirtualTextureSetter.prop
+shader TerrainProjector.hlsl TerrainProjector.prop

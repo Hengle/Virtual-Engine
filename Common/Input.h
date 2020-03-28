@@ -89,7 +89,7 @@ struct InputData
 	bool lMouseUp;
 	bool rMouseUp;
 	bool mMouseUp;
-	constexpr InputData() : 
+	InputData() : 
 		keyDownArray(106),
 		keyUpArray(106),
 		lastMousePosition(0,0),

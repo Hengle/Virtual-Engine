@@ -25,38 +25,6 @@ public:
 		UINT width, UINT height,
 		Shader* shader, UINT pass);
 
-	inline static void ResourceStateTransform(
-		ID3D12GraphicsCommandList* commandList,
-		D3D12_RESOURCE_STATES beforeState,
-		D3D12_RESOURCE_STATES afterState,
-		ID3D12Resource* resource)
-	{
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
-			resource,
-			beforeState,
-			afterState
-		));
-	}
-	template <uint resourceCount>
-	inline constexpr static void MultiResourceStateTransform(
-		ID3D12GraphicsCommandList* commandList,
-		std::pair<D3D12_RESOURCE_STATES, D3D12_RESOURCE_STATES>* statesTransformation,
-		ID3D12Resource** resources, uint count = resourceCount)
-	{
-		if (count > 0)
-		{
-			D3D12_RESOURCE_BARRIER barrier[resourceCount];
-			for (uint i = 0; i < count; ++i)
-			{
-				barrier[i] = CD3DX12_RESOURCE_BARRIER::Transition(
-					resources[i],
-					statesTransformation[i].first,
-					statesTransformation[i].second
-				);
-			}
-			commandList->ResourceBarrier(count, barrier);
-		}
-	}
 
 	inline static void UAVBarrier(
 		ID3D12GraphicsCommandList* commandList,

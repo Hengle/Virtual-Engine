@@ -1,7 +1,7 @@
-Texture2D<float4> _SplatMap[100] : register(t0, space0);
-Texture2D<float4> _AlbedoMap[100] : register(t0, space1);
-Texture2D<float4> _NormalMap[100] : register(t0, space2);
-StructuredBuffer<uint2> _SplatIndices : register(t0, space3);
+Texture2D<float4> _MainTex[2] : register(t0, space0);
+Texture2D<uint4> _IndexMap[2] : register(t0, space1);
+StructuredBuffer<uint2> _DescriptorIndexBuffer : register(t0, space2);
+Texture2D<float2> _RGTex[2] : register(t0, space3);
 cbuffer Params : register(b0)
 
 #pragma projectPass
@@ -10,4 +10,5 @@ fragment frag
 ztest always
 cull off
 zwrite off
+conservative off
 #end

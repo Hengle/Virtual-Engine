@@ -394,7 +394,7 @@ mScissorRect({ 0, 0, (int)width, (int)height })
 					&depthStencilDesc,
 					this->initState,
 					nullptr,
-					IID_PPV_ARGS(Resource.GetAddressOf())));
+					IID_PPV_ARGS(&Resource)));
 			}
 			else
 			{

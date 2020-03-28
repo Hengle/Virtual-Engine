@@ -40,6 +40,28 @@ bool MathLib::BoxIntersect(const Matrix4& localToWorldMatrix, Vector4* planes, c
 }
 
 void MathLib::GetCameraNearPlanePoints(
+	const Math::Vector3& right,
+	const Math::Vector3& up,
+	const Math::Vector3& forward,
+	const Math::Vector3& position,
+	double fov,
+	double aspect,
+	double distance,
+	Math::Vector3* corners
+	)
+{
+	double upLength = distance * tan(fov * 0.5);
+	double rightLength = upLength * aspect;
+	Vector3 farPoint = position + distance * forward;
+	Vector3 upVec = upLength * up;
+	Vector3 rightVec = rightLength * right;
+	corners[0] = farPoint - upVec - rightVec;
+	corners[1] = farPoint - upVec + rightVec;
+	corners[2] = farPoint + upVec - rightVec;
+	corners[3] = farPoint + upVec + rightVec;
+}
+
+void MathLib::GetCameraNearPlanePoints(
 	const Matrix4& localToWorldMat,
 	double fov,
 	double aspect,
@@ -50,9 +72,9 @@ void MathLib::GetCameraNearPlanePoints(
 	Matrix4& localToWorldMatrix = (Matrix4&)localToWorldMat;
 	double upLength = distance * tan(fov * 0.5);
 	double rightLength = upLength * aspect;
-	Vector4 farPoint = localToWorldMatrix[3] + distance * localToWorldMatrix[2];
-	Vector4 upVec = upLength * localToWorldMatrix[1];
-	Vector4 rightVec = rightLength * localToWorldMatrix[0];
+	Vector3 farPoint = localToWorldMatrix[3] + distance * localToWorldMatrix[2];
+	Vector3 upVec = upLength * localToWorldMatrix[1];
+	Vector3 rightVec = rightLength * localToWorldMatrix[0];
 	corners[0] = farPoint - upVec - rightVec;
 	corners[1] = farPoint - upVec + rightVec;
 	corners[2] = farPoint + upVec - rightVec;
@@ -130,8 +152,8 @@ void MathLib::GetFrustumBoundingBox(
 	*maxValue = poses[7];
 	auto func = [&](UINT i)->void
 	{
-		*minValue = XMVectorMin(poses[i], *minValue);
-		*maxValue = XMVectorMax(poses[i], *maxValue);
+		*minValue = Min<Vector3>(poses[i], *minValue);
+		*maxValue = Max<Vector3>(poses[i], *maxValue);
 	};
 	InnerLoop<decltype(func), 7>(func);
 }
@@ -253,4 +275,32 @@ bool MathLib::BoxContactWithBox(double3 min0, double3 max0, double3 min1, double
 	vz = min1.z > max0.z;
 	if (vx || vy || vz) return false;
 	return true;
+}
+
+Vector4 MathLib::CameraSpacePlane(const Matrix4& worldToCameraMatrix, const Vector3& pos, const Vector3& normal, float clipPlaneOffset)
+{
+	Vector4 offsetPos = pos + normal * clipPlaneOffset;
+	offsetPos.SetW(1);
+	Vector4 cpos = mul(worldToCameraMatrix, offsetPos);
+	cpos.SetW(0);
+	Vector4& nor = (Vector4&)normal;
+	nor.SetW(0);
+	Vector4 cnormal = normalize(mul(worldToCameraMatrix, nor));
+	cnormal.SetW(-dot(cpos, cnormal));
+	return cnormal;
+}
+
+Math::Matrix4 MathLib::CalculateObliqueMatrix(const Math::Vector4& clipPlane, const Math::Matrix4& projection)
+{
+	Matrix4 inversion = inverse(projection);
+	Vector4 q = mul(inversion, Vector4(
+		(clipPlane.GetX() > 0) - (clipPlane.GetX() < 0),
+		(clipPlane.GetY() > 0) - (clipPlane.GetY() < 0),
+		1.0f,
+		1.0f
+		));
+	Vector4 c = clipPlane * (2.0f / dot(clipPlane, q));
+	Matrix4 retValue = projection;
+	retValue[2] = Vector4(c) - Vector4(retValue[3]);
+	return retValue;
 }

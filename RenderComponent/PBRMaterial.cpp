@@ -68,19 +68,19 @@ PBRMaterial::PBRMaterial(ID3D12Device* device, PBRMaterialManager* manager, cons
 	float f = 0;
 	if (jsonObj.Get("uvScale", s))
 	{
-		ReadStringToVector<float2, 2>(s.data(), s.length(), &matData.uvScale);
+		ReadStringToVector<float2>(s.data(), s.length(), &matData.uvScale);
 	}
 	if (jsonObj.Get("uvOffset", s))
 	{
-		ReadStringToVector<float2, 2>(s.data(), s.length(), &matData.uvOffset);
+		ReadStringToVector<float2>(s.data(), s.length(), &matData.uvOffset);
 	}
 	if (jsonObj.Get("albedo", s))
 	{
-		ReadStringToVector<float3, 3>(s.data(), s.length(), &matData.albedo);
+		ReadStringToVector<float3>(s.data(), s.length(), &matData.albedo);
 	}
 	if (jsonObj.Get("emission", s))
 	{
-		ReadStringToVector<float3, 3>(s.data(), s.length(), &matData.emission);
+		ReadStringToVector<float3>(s.data(), s.length(), &matData.emission);
 	}
 	if (jsonObj.Get("metallic", f))
 	{
@@ -109,21 +109,24 @@ PBRMaterial::PBRMaterial(ID3D12Device* device, PBRMaterialManager* manager, cons
 			return AssetDatabase::GetInstance()->GetLoadedObject(s);
 		};
 	}
-	ObjectPtr<MObject> obj = func(device, s, AssetLoadType::Texture2D);
 	if (jsonObj.Get("albedoTexIndex", s))
 	{
+		ObjectPtr<MObject> obj = func(device, s, AssetLoadType::Texture2D);
 		SetAlbedoTexture(obj.CastTo<ITexture>());
 	}
 	if (jsonObj.Get("specularTexIndex", s))
 	{
+		ObjectPtr<MObject> obj = func(device, s, AssetLoadType::Texture2D);
 		SetSMOTexture(obj.CastTo<ITexture>());
 	}
 	if (jsonObj.Get("normalTexIndex", s))
 	{
+		ObjectPtr<MObject> obj = func(device, s, AssetLoadType::Texture2D);
 		SetNormalTexture(obj.CastTo<ITexture>());
 	}
 	if (jsonObj.Get("emissionTexIndex", s))
 	{
+		ObjectPtr<MObject> obj = func(device, s, AssetLoadType::Texture2D);
 		SetEmissionTexture(obj.CastTo<ITexture>());
 	}
 

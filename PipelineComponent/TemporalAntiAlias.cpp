@@ -54,7 +54,7 @@ struct TAACameraData : public IPipelineResource
 	UINT width, height;
 	inline static const uint SRVHeapSize = 7;
 private:
-	void Update(UINT width, UINT height, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+	void Update(UINT width, UINT height, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, TransitionBarrierBuffer& barrier)
 	{
 		this->width = width;
 		this->height = height;
@@ -66,9 +66,9 @@ private:
 		lastDepthTexture.New(device, width, height, rtFormat, TextureDimension::Tex2D, 0, 0);
 		rtFormat.colorFormat = DXGI_FORMAT_R16G16_SNORM;
 		lastMotionVectorTexture.New(device, width, height, rtFormat, TextureDimension::Tex2D, 0, 0);
-		Graphics::ResourceStateTransform(cmdList, lastRenderTarget->GetWriteState(), lastRenderTarget->GetReadState(), lastRenderTarget->GetResource());
-		Graphics::ResourceStateTransform(cmdList, lastDepthTexture->GetWriteState(), lastDepthTexture->GetReadState(), lastDepthTexture->GetResource());
-		Graphics::ResourceStateTransform(cmdList, lastMotionVectorTexture->GetWriteState(), lastMotionVectorTexture->GetReadState(), lastMotionVectorTexture->GetResource());
+		barrier.AddCommand(lastRenderTarget->GetWriteState(), lastRenderTarget->GetReadState(), lastRenderTarget->GetResource());
+		barrier.AddCommand(lastDepthTexture->GetWriteState(), lastDepthTexture->GetReadState(), lastDepthTexture->GetResource());
+		barrier.AddCommand(lastMotionVectorTexture->GetWriteState(), lastMotionVectorTexture->GetReadState(), lastMotionVectorTexture->GetResource());
 	}
 public:
 	~TAACameraData()
@@ -77,18 +77,18 @@ public:
 		lastDepthTexture.Delete();
 		lastMotionVectorTexture.Delete();
 	}
-	TAACameraData(UINT width, UINT height, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList) :
+	TAACameraData(UINT width, UINT height, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, TransitionBarrierBuffer& barrierBuffer) :
 		taaBuffer(device, 3, true, sizeof(TAAConstBuffer)),
 		srvHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, SRVHeapSize * 3, true)
 	{
-		Update(width, height, device, cmdList);
+		Update(width, height, device, cmdList, barrierBuffer);
 	}
 
-	bool UpdateFrame(UINT width, UINT height, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList)
+	bool UpdateFrame(UINT width, UINT height, ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, TransitionBarrierBuffer& barrierBuffer)
 	{
 		if (width != this->width || height != this->height)
 		{
-			Update(width, height, device, cmdList);
+			Update(width, height, device, cmdList, barrierBuffer);
 			return true;
 		}
 		return false;
@@ -126,12 +126,12 @@ public:
 			});
 		TAACameraData* tempCamData = (TAACameraData*)cam->GetResource(this, [&]()->TAACameraData*
 			{
-				return new TAACameraData(width, height, device, commandList);
+				return new TAACameraData(width, height, device, commandList, transitionBarrier);
 			});
 
 		transitionBarrier.AddCommand(inputDepthBuffer->GetWriteState(), inputDepthBuffer->GetReadState(), inputDepthBuffer->GetResource());
 		transitionBarrier.AddCommand(motionVector->GetWriteState(), motionVector->GetReadState(), motionVector->GetResource());
-		if (tempCamData->UpdateFrame(width, height, device, commandList))
+		if (tempCamData->UpdateFrame(width, height, device, commandList, transitionBarrier))
 		{
 			//Refresh & skip
 			transitionBarrier.AddCommand(renderTargetTex->GetWriteState(), D3D12_RESOURCE_STATE_COPY_DEST, renderTargetTex->GetResource());
@@ -167,7 +167,7 @@ public:
 			if (froxelParams == 0)
 				froxelParams = ShaderID::PropertyToID("FroxelParams");
 			taaShader->BindRootSignature(commandList, &tempCamData->srvHeap);
-			auto camBuffer = res->cameraCBs[cam->GetInstanceID()];
+			auto camBuffer = res->cameraCBs[cam];
 			VolumetricCameraData* volumeCamData = (VolumetricCameraData*)cam->GetResource(volumeComp, [&]()->VolumetricCameraData*
 				{
 					throw "Null";

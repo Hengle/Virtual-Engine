@@ -36,6 +36,7 @@ struct VirtualTextureRenderArgs
 };
 class VirtualTexture : public MObject
 {
+	//typedef Runnable<void(ID3D12Device*, ID3D12GraphicsCommandList*, FrameResource*, TransitionBarrierBuffer)> RenderTask;
 	struct uint2Hash
 	{
 		size_t operator()(const uint2& value) const
@@ -159,12 +160,12 @@ class VirtualTexture : public MObject
 		uint2 _IndirectTexelSize;
 		uint _MaxMipLevel;
 	};
-	StackObject<PSOContainer> psoContainer;
-	StackObject<CBufferPool> cbufferPool;
-	StackObject<StructuredBuffer> textureIndexBuffer;
-	StackObject<RenderTexture> indirectTex;
-	StackObject<TextureHeap> texHeap;
-	StackObject<UploadBuffer> renderConstDataBuffer;
+	StackObject<PSOContainer, true> psoContainer;
+	StackObject<CBufferPool, true> cbufferPool;
+	StackObject<StructuredBuffer, true> textureIndexBuffer;
+	StackObject<RenderTexture, true> indirectTex;
+	StackObject<TextureHeap, true> texHeap;
+	StackObject<UploadBuffer, true> renderConstDataBuffer;
 	std::vector<int2> bufferSetCommand;
 	VTUpdateCommandBuffer commandBuffer;
 	std::vector<std::vector<TextureBlock>> textureChunks;
@@ -175,11 +176,20 @@ class VirtualTexture : public MObject
 	uint texelSize;
 	uint textureCapacity;
 	uint indirectSize;
+	std::vector<DXGI_FORMAT> mapFormats;
 	bool InternalCreate(uint2 index, uint size, VirtualChunk& result);
 public:
 	uint GetChunkResolution() const { return texelSize; }
 	uint GetIndirectResolution() const { return indirectSize; }
 	uint GetTextureCapacity() const { return textureCapacity; }
+	DXGI_FORMAT* GetFormats() const noexcept
+	{
+		return (DXGI_FORMAT*)mapFormats.data();
+	}
+	size_t GetFormatCount() const noexcept
+	{
+		return mapFormats.size();
+	}
 	VirtualTexture(
 		ID3D12Device* device,
 		uint indirectSize,

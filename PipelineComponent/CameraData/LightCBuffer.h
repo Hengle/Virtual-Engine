@@ -12,10 +12,8 @@ struct LightCullCBuffer
 	float4 _CameraNearPos;
 	float4 _CameraFarPos;
 	float4 _ZBufferParams;
-	//Align
 	float3 _CameraForward;
 	uint _LightCount;
-	//Align
 	float3 _SunColor;
 	uint _SunEnabled;
 	float3 _SunDir;

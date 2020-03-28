@@ -15,6 +15,7 @@
 #include "../Common/Input.h"
 #include "VolumetricComponent.h"
 #include "../RenderComponent/Terrain/VirtualTexture.h"
+#include "../RenderComponent/GRPRenderManager.h"
 //ThreadCommand* threadCommand;
 RenderPipeline* RenderPipeline::current(nullptr);
 std::unordered_map<std::string, PipelineComponent*> RenderPipeline::componentsLink;
@@ -107,6 +108,7 @@ void RenderPipeline::PrepareRendering(RenderPipelineData& renderData, JobSystem*
 			data.device, commandList->GetCmdList(), renderData.resource, commandList->GetBarrierBuffer()))
 		{
 		}
+		World::GetInstance()->GetGRPRenderManager()->UpdateFrame(renderData.resource, data.device);
 		World::GetInstance()->virtualTexture->ExecuteUpdate(
 			data.device,
 			commandList->GetCmdList(),

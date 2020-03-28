@@ -26,12 +26,13 @@ D3D12_INDEX_BUFFER_VIEW Mesh::IndexBufferView()
 	return ibv;
 }
 
-ComPtr<ID3D12Resource> CreateDefaultBuffer(
+void CreateDefaultBuffer(
 	ID3D12Device* device,
 	UINT64 byteSize,
-	ComPtr<ID3D12Resource>& uploadBuffer)
+	ComPtr<ID3D12Resource>& uploadBuffer,
+	ComPtr<ID3D12Resource>& defaultBuffer)
 {
-	ComPtr<ID3D12Resource> defaultBuffer;
+
 
 	// Create the actual default buffer resource.
 	ThrowIfFailed(device->CreateCommittedResource(
@@ -51,9 +52,6 @@ ComPtr<ID3D12Resource> CreateDefaultBuffer(
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&uploadBuffer)));
-
-
-	return defaultBuffer;
 }
 
 void CopyToBuffer(
@@ -93,7 +91,17 @@ public:
 		CopyToBuffer(byteSize, commandList, uploadResource, defaultResource, barrierBuffer);
 	}
 };
-
+void Mesh::ReleaseAfterFlush()
+{
+	for (auto ite = FrameResource::mFrameResources.begin(); ite != FrameResource::mFrameResources.end(); ++ite)
+	{
+		if (*ite) FrameResource::ReleaseResourceAfterFlush(dataBuffer, ite->get());
+	}
+}
+Mesh::~Mesh()
+{
+	ReleaseAfterFlush();
+}
 Mesh::Mesh(
 	int vertexCount,
 	DirectX::XMFLOAT3* positions,
@@ -113,6 +121,7 @@ indexFormat(indexFormat),
 indexCount(indexCount),
 indexArrayPtr(indexArrayPtr)
 {
+	
 	//IndexFormat = indexFormat == DXGI_FORMAT_R16_UINT ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
 	//TODO
 	meshLayoutIndex = MeshLayout::GetMeshLayoutIndex(
@@ -218,7 +227,7 @@ indexArrayPtr(indexArrayPtr)
 	char* indexBufferStart = dataPtr + VertexBufferByteSize;
 	memcpy(indexBufferStart, indexArrayPtr, indexCount * ((indexFormat == DXGI_FORMAT_R16_UINT) ? 2 : 4));
 	ComPtr<ID3D12Resource> uploadBuffer;
-	dataBuffer = CreateDefaultBuffer(device, indexSize + VertexBufferByteSize, uploadBuffer);
+	CreateDefaultBuffer(device, indexSize + VertexBufferByteSize, uploadBuffer, dataBuffer);
 	void* mappedPtr = nullptr;
 	ThrowIfFailed(uploadBuffer->Map(0, nullptr, &mappedPtr));
 	memcpy(mappedPtr, dataPtr, indexSize + VertexBufferByteSize);

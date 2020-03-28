@@ -38,6 +38,7 @@ class Texture : public ITexture
 {
 private:
 	void GetResourceViewDescriptor(D3D12_SHADER_RESOURCE_VIEW_DESC& desc);
+	bool loaded = false;
 public:
 
 	//Async Load
@@ -65,6 +66,7 @@ public:
 		TextureHeap* placedHeap = nullptr,
 		size_t placedOffset = 0
 	);
+	bool IsLoaded() const { return loaded; }
 	virtual void BindSRVToHeap(DescriptorHeap* targetHeap, UINT index, ID3D12Device* device);
 };
 

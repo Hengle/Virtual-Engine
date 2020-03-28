@@ -78,6 +78,8 @@ private:
 	std::unordered_map<Camera*, FrameResCamera*> perCameraDatas;
 	std::unordered_map<void*, IPipelineResource*> perFrameResource;
 	std::mutex mtx;
+	void DisposeResource(void* targetComponent);
+	void DisposePerCameraResource(void* targetComponent, Camera* cam);
 public:
 	ThreadCommand* commmonThreadCommand;
 	static CBufferPool cameraCBufferPool;
@@ -102,7 +104,7 @@ public:
     // We cannot update a cbuffer until the GPU is done processing the commands
     // that reference it.  So each frame needs their own cbuffers.
    // std::unique_ptr<UploadBuffer<FrameConstants>> FrameCB = nullptr;
-	std::unordered_map<UINT, ConstBufferElement> cameraCBs;
+	std::unordered_map<Camera*, ConstBufferElement> cameraCBs;
 	std::unordered_map<UINT, ConstBufferElement> objectCBs;
     // Fence value to mark commands up to this fence point.  This lets us
     // check if these frame resources are still in use by the GPU.
@@ -113,7 +115,7 @@ public:
 	{
 		std::lock_guard<std::mutex> lck(mtx);
 		FrameResCamera* ptr = perCameraDatas[cam];
-		auto&& ite = ptr->perCameraResource.find(targetComponent);
+		auto ite = ptr->perCameraResource.find(targetComponent);
 		if (ite == ptr->perCameraResource.end())
 		{
 			IPipelineResource* newComp = func();
@@ -126,7 +128,7 @@ public:
 	inline IPipelineResource* GetResource(void* targetComponent, const Func& func)
 	{
 		std::lock_guard<std::mutex> lck(mtx);
-		auto&& ite = perFrameResource.find(targetComponent);
+		auto ite = perFrameResource.find(targetComponent);
 		if (ite == perFrameResource.end())
 		{
 			IPipelineResource* newComp = func();
@@ -135,23 +137,6 @@ public:
 		}
 		return ite->second;
 	}
-
-	void DisposeResource(void* targetComponent)
-	{
-		std::lock_guard<std::mutex> lck(mtx);
-		auto&& ite = perFrameResource.find(targetComponent);
-		if (ite == perFrameResource.end()) return;
-		delete ite->second;
-		perFrameResource.erase(ite);
-	}
-
-	void DisposeResource(void* targetComponent, Camera* cam)
-	{
-		std::lock_guard<std::mutex> lck(mtx);
-		FrameResCamera* ptr = perCameraDatas[cam];
-		auto&& ite = ptr->perCameraResource.find(targetComponent);
-		if (ite == ptr->perCameraResource.end()) return;
-		delete ite->second;
-		ptr->perCameraResource.erase(ite);
-	}
+	static void DisposeResources(void* targetComponent);
+	static void DisposePerCameraResources(void* targetComponent, Camera* cam);
 };

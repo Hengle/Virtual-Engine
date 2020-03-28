@@ -1,4 +1,4 @@
-Texture2D<float4> _VirtualTex[100] : register(t0, space0);
+Texture2D<float4> _VirtualTex[2] : register(t0, space0);
 Texture2D<uint4> _IndirectTex : register(t0, space1);
 StructuredBuffer<VTIndices> _IndirectBuffer : register(t1, space1);
 StructuredBuffer<ObjectData> _ObjectDataBuffer : register(t2, space1);

@@ -6,6 +6,8 @@
 #include "ConcurrentQueue.h"
 #include "../Common/Pool.h"
 #include <DirectXMath.h>
+#include "../Common/TypeWiper.h"
+#include "../Common/MetaLib.h"
 class JobHandle;
 class JobThreadRunnable;
 class JobBucket;
@@ -18,23 +20,24 @@ class JobNode
 	friend class JobHandle;
 	friend class JobThreadRunnable;
 private:
+	inline static const size_t STORAGE_SIZE = 16 * sizeof(__m128);
 	struct FuncStorage
 	{
 		__m128 arr[16];
 	};
-	JobBucket* bucket;
 	std::atomic<unsigned int> targetDepending;
-	std::vector<JobNode*>* dependingEvent = nullptr;
+	StackObject<std::vector<JobNode*>> dependingEvent;
+	bool dependedEventInitialized = false;
 	FuncStorage stackArr;
-	void* ptr = nullptr;
+	void* ptr;
 	void(*destructorFunc)(void*) = nullptr;
 	void(*executeFunc)(void*);
-	VectorPool* vectorPool = nullptr;
 	std::mutex* threadMtx;
-	template <typename Func>
-	constexpr void Create(const Func& func, VectorPool* vectorPool, std::mutex* threadMtx, JobHandle* dependedJobs, uint dependCount);
+
+	void Create(const FunctorData& funcData, void* funcPtr, std::mutex* threadMtx, JobHandle* dependedJobs, uint dependCount);
 	JobNode* Execute(ConcurrentQueue<JobNode*>& taskList, std::condition_variable& cv);
 public:
-
+	void Reset();
+	void Dispose();
 	~JobNode();
 };

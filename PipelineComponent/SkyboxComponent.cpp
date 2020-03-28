@@ -204,7 +204,7 @@ public:
 			device,
 			0,
 			ShaderID::GetPerCameraBufferID(),
-			resource->cameraCBs[cam->GetInstanceID()],
+			resource->cameraCBs[cam],
 			gbufferContainer, 0
 		);
 		if (world->terrainDrawer)
@@ -216,7 +216,7 @@ public:
 				terrainTestShader,
 				0,
 				gbufferContainer, 0,
-				resource->cameraCBs[cam->GetInstanceID()],
+				resource->cameraCBs[cam],
 				resource,
 				world->virtualTexture
 			);
@@ -244,7 +244,7 @@ public:
 			device,
 			1,
 			ShaderID::GetPerCameraBufferID(),
-			resource->cameraCBs[cam->GetInstanceID()],
+			resource->cameraCBs[cam],
 			gbufferContainer, 1
 		);
 
@@ -254,7 +254,7 @@ public:
 			device,
 			0,
 			ShaderID::GetPerCameraBufferID(),
-			resource->cameraCBs[cam->GetInstanceID()],
+			resource->cameraCBs[cam],
 			gbufferContainer, 0
 		);
 	}

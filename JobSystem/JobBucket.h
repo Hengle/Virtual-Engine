@@ -2,6 +2,7 @@
 #include <vector>
 #include "JobHandle.h"
 #include "../Common/Pool.h"
+#include "../Common/TypeWiper.h"
 class JobSystem;
 class JobThreadRunnable;
 class JobNode;
@@ -17,6 +18,7 @@ private:
 	JobSystem* sys = nullptr;
 	JobBucket(JobSystem* sys) noexcept;
 	~JobBucket() noexcept{}
+	JobHandle GetTask(JobHandle* dependedJobs, unsigned int dependCount, const FunctorData& funcData, void* funcPtr);
 public:
 	template <typename Func>
 	constexpr JobHandle GetTask(JobHandle* dependedJobs, unsigned int dependCount, const Func& func);

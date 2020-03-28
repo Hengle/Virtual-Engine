@@ -33,6 +33,7 @@ namespace Math
 		INLINE Vector3(const Vector3& v) : m_vec(v) {}
 		INLINE Vector3(const Scalar& s) : m_vec(s) {}
 		INLINE  Vector3(const Vector4& v);
+		INLINE void operator=(const Vector4& v);
 		INLINE  Vector3(const FXMVECTOR& vec) : m_vec(vec) {}
 
 		INLINE operator XMVECTOR() const { return m_vec; }
@@ -96,8 +97,12 @@ namespace Math
 		INLINE Vector4(const Vector3& xyz, float w) : m_vec(XMVectorSetW(xyz, w)) {  }
 		INLINE Vector4(const Vector4& v) : m_vec(v) {}
 		INLINE Vector4(const Scalar& s) : m_vec(s) { }
-		INLINE  Vector4(const Vector3& xyz) : m_vec(SetWToOne(xyz)) { }
-		INLINE  Vector4(const FXMVECTOR& vec) : m_vec(vec) {}
+		INLINE Vector4(const Vector3& xyz) : m_vec(SetWToOne(xyz)) { }
+		INLINE void operator=(const Vector3& xyz)
+		{
+			m_vec = SetWToOne(xyz);
+		}
+		INLINE Vector4(const FXMVECTOR& vec) : m_vec(vec) {}
 		INLINE Vector4(const XMFLOAT4& flt) : m_vec(XMLoadFloat4(&flt)) {}
 
 		INLINE operator XMVECTOR() const { return m_vec; }
@@ -161,8 +166,11 @@ namespace Math
 
 	INLINE Vector3::Vector3(const Vector4& v)
 	{
-		m_vec = v.m_vec;
-		m_vec.m128_f32[3] = 0;
+		m_vec = SetWToZero(v);
+	}
+	INLINE void Vector3::operator=(const Vector4& v)
+	{
+		m_vec = SetWToZero(v);
 	}
 
 } // namespace Math

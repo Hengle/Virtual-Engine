@@ -10,15 +10,16 @@ GRPRenderer::GRPRenderer(
 	const ObjectPtr<Transform>& trans, ObjectPtr<Component>& ptr) :
 	Component(trans, ptr)
 {
-	
+
 }
 GRPRenderer::~GRPRenderer()
 {
 	World* world = World::GetInstance();
-	if (world && loaded)
+	if (world && loaded && transform)
 	{
 		GRPRenderManager* rManager = world->GetGRPRenderManager();
-		rManager->RemoveElement(transform, device);
+		if (rManager)
+			rManager->RemoveElement(transform, device);
 	}
 }
 
