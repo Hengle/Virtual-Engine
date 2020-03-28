@@ -87,7 +87,7 @@ public:
 		FrameResource* resource,
 		TransitionBarrierBuffer* barrierBuffer)
 	{
-		FrameResource::ReleaseResourceAfterFlush(uploadResource, resource);
+		resource->ReleaseResourceAfterFlush(uploadResource);
 		CopyToBuffer(byteSize, commandList, uploadResource, defaultResource, barrierBuffer);
 	}
 };
@@ -95,7 +95,7 @@ void Mesh::ReleaseAfterFlush()
 {
 	for (auto ite = FrameResource::mFrameResources.begin(); ite != FrameResource::mFrameResources.end(); ++ite)
 	{
-		if (*ite) FrameResource::ReleaseResourceAfterFlush(dataBuffer, ite->get());
+		if (*ite) (*ite)->ReleaseResourceAfterFlush(dataBuffer);
 	}
 }
 Mesh::~Mesh()

@@ -73,14 +73,14 @@ void FrameResource::OnUnloadCamera(Camera* targetCamera)
 	perCameraDataMemPool.Delete(data);
 }
 
-void FrameResource::ReleaseResourceAfterFlush(Microsoft::WRL::ComPtr<ID3D12Resource>& resources, FrameResource* resource)
+void FrameResource::ReleaseResourceAfterFlush(Microsoft::WRL::ComPtr<ID3D12Resource>& resources)
 {
-	if (resource == nullptr)
+	if (this == nullptr)
 		needClearResourcesAfterFlush.push_back(resources);
 	else
 	{
-		std::lock_guard lck(resource->mtx);
-		resource->needClearResources.push_back(resources);
+		std::lock_guard lck(mtx);
+		needClearResources.push_back(resources);
 	}
 }
 

@@ -18,6 +18,6 @@ void ITexture::ReleaseAfterFrame()
 {
 	for (auto ite = FrameResource::mFrameResources.begin(); ite != FrameResource::mFrameResources.end(); ++ite)
 	{
-		if (*ite) FrameResource::ReleaseResourceAfterFlush(Resource, ite->get());
+		if (*ite) (*ite)->FrameResource::ReleaseResourceAfterFlush(Resource);
 	}
 }

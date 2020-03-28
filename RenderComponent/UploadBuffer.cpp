@@ -63,4 +63,4 @@ void UploadBuffer::Create(ID3D12Device* device, UINT elementCount, bool isConsta
 	ThrowIfFailed(mUploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mMappedData)));
 }
 
-void UploadBuffer::ReleaseAfterFlush(FrameResource* res) { FrameResource::ReleaseResourceAfterFlush(mUploadBuffer, res); }
+void UploadBuffer::ReleaseAfterFlush(FrameResource* res) { res->ReleaseResourceAfterFlush(mUploadBuffer); }

@@ -91,7 +91,7 @@ public:
     FrameResource& operator=(const FrameResource& rhs) = delete;
     ~FrameResource();
 	void UpdateBeforeFrame(ID3D12Fence* mFence);
-	static void ReleaseResourceAfterFlush(Microsoft::WRL::ComPtr<ID3D12Resource>& resources, FrameResource* resource);
+	void ReleaseResourceAfterFlush(Microsoft::WRL::ComPtr<ID3D12Resource>& resources);
 	void UpdateAfterFrame(UINT64& currentFence, ID3D12CommandQueue* commandQueue, ID3D12Fence* mFence);
 	void WaitForLastFrameResource(UINT64 fenceCount, ID3D12CommandQueue* commandQueue, ID3D12Fence* mFence);
 	ThreadCommand* GetNewThreadCommand(Camera* cam, ID3D12Device* device, D3D12_COMMAND_LIST_TYPE cmdListType);

@@ -86,5 +86,5 @@ size_t StructuredBuffer::GetAddressOffset(UINT element, UINT index) const
 
 void StructuredBuffer::ReleaseResourceAfterFlush(FrameResource* targetResource)
 {
-	FrameResource::ReleaseResourceAfterFlush(mDefaultBuffer, targetResource);
+	targetResource->ReleaseResourceAfterFlush(mDefaultBuffer);
 }
